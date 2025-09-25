@@ -1,17 +1,42 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { sendOrderNotification, validateEmailConfig } from '../services/emailService';
 
 const OrderConfirmation = ({ order, onClose, onNewOrder }) => {
+  const navigate = useNavigate();
   const [emailStatus, setEmailStatus] = useState(null);
   const [isEmailConfigured] = useState(validateEmailConfig());
   const [autoSentStatus, setAutoSentStatus] = useState('sending');
 
-  // Envío automático al dueño cuando se confirma el pedido
+  // Función para obtener información del cliente de manera segura
+  const getCustomerInfo = () => {
+    if (!order) return { name: 'N/A', phone: 'N/A', email: 'N/A' };
+    
+    // Si tiene estructura con customer (usuarios no autenticados)
+    if (order.customer) {
+      return {
+        name: order.customer.name || 'N/A',
+        phone: order.customer.phone || 'N/A',
+        email: order.customer.email || 'N/A',
+        address: order.customer.address || 'N/A'
+      };
+    }
+    
+    // Si tiene estructura de database (usuarios autenticados)
+    return {
+      name: order.user_name || 'Usuario autenticado',
+      phone: order.phone || 'N/A',
+      email: order.user_email || 'N/A',
+      address: order.delivery_address || 'N/A'
+    };
+  };
+
+  // Envío automático por email al dueño cuando se confirma el pedido (sin WhatsApp automático)
   useEffect(() => {
     const sendAutomaticNotification = async () => {
       try {
         if (isEmailConfigured) {
-          // Intentar enviar por EmailJS primero
+          // Intentar enviar por EmailJS
           const result = await sendOrderNotification(order);
           if (result.success) {
             setAutoSentStatus('email-sent');
@@ -19,14 +44,11 @@ const OrderConfirmation = ({ order, onClose, onNewOrder }) => {
           }
         }
         
-        // Si EmailJS no está configurado o falló, enviar por WhatsApp automáticamente
-        sendWhatsAppMessage();
-        setAutoSentStatus('whatsapp-sent');
+        // Si EmailJS no está configurado, solo mostrar que el pedido fue recibido
+        setAutoSentStatus('received');
       } catch (error) {
         console.error('Error en envío automático:', error);
-        // Como fallback, enviar por WhatsApp
-        sendWhatsAppMessage();
-        setAutoSentStatus('whatsapp-sent');
+        setAutoSentStatus('received');
       }
     };
 
@@ -43,18 +65,19 @@ const OrderConfirmation = ({ order, onClose, onNewOrder }) => {
   };
 
   const sendWhatsAppMessage = () => {
+    const customerInfo = getCustomerInfo();
     const message = `¡Hola! Tengo un nuevo pedido:
 
 ` +
       `*Pedido #${order.id}*
 ` +
-      `*Cliente:* ${order.customer.name}
+      `*Cliente:* ${customerInfo.name}
 ` +
-      `*Teléfono:* ${order.customer.phone}
+      `*Teléfono:* ${customerInfo.phone}
 ` +
-      `*Email:* ${order.customer.email || 'No proporcionado'}
+      `*Email:* ${customerInfo.email || 'No proporcionado'}
 ` +
-      `*Dirección:* ${order.customer.address}
+      `*Dirección:* ${customerInfo.address}
 
 ` +
       `*Productos:*
@@ -67,7 +90,7 @@ const OrderConfirmation = ({ order, onClose, onNewOrder }) => {
 *Total: $${order.total.toLocaleString()}*
 
 ` +
-      `*Notas:* ${order.customer.notes || 'Ninguna'}
+      `*Notas:* ${order.notes || order.customer?.notes || 'Ninguna'}
 
 ` +
       `*Fecha:* ${formatDate(order.timestamp)}`;
@@ -83,19 +106,20 @@ const OrderConfirmation = ({ order, onClose, onNewOrder }) => {
   const sendEmail = async () => {
     if (!isEmailConfigured) {
       // Fallback al método mailto si EmailJS no está configurado
-      const subject = `Nuevo Pedido #${order.id} - ${order.customer.name}`;
+      const customerInfo = getCustomerInfo();
+      const subject = `Nuevo Pedido #${order.id} - ${customerInfo.name}`;
       const body = `Nuevo pedido recibido:
 
 ` +
         `Pedido #: ${order.id}
 ` +
-        `Cliente: ${order.customer.name}
+        `Cliente: ${customerInfo.name}
 ` +
-        `Teléfono: ${order.customer.phone}
+        `Teléfono: ${customerInfo.phone}
 ` +
-        `Email: ${order.customer.email || 'No proporcionado'}
+        `Email: ${customerInfo.email || 'No proporcionado'}
 ` +
-        `Dirección: ${order.customer.address}
+        `Dirección: ${customerInfo.address}
 
 ` +
         `Productos:
@@ -108,7 +132,7 @@ const OrderConfirmation = ({ order, onClose, onNewOrder }) => {
 Total: $${order.total.toLocaleString()}
 
 ` +
-        `Notas: ${order.customer.notes || 'Ninguna'}
+        `Notas: ${order.notes || order.customer?.notes || 'Ninguna'}
 
 ` +
         `Fecha: ${formatDate(order.timestamp)}`;
@@ -137,35 +161,34 @@ Total: $${order.total.toLocaleString()}
   };
 
   const copyOrderDetails = () => {
+    const customerInfo = getCustomerInfo();
     const orderText = `Pedido #${order.id}
 ` +
-      `Cliente: ${order.customer.name}
+      `Cliente: ${customerInfo.name}
 ` +
-      `Teléfono: ${order.customer.phone}
+      `Teléfono: ${customerInfo.phone}
 ` +
-      `Email: ${order.customer.email || 'No proporcionado'}
+      `Email: ${customerInfo.email || 'No proporcionado'}
 ` +
-      `Dirección: ${order.customer.address}
+      `Dirección: ${customerInfo.address}
 
 ` +
       `Productos:
 ` +
       order.items.map(item => 
-        `${item.quantity}x ${item.name} - $${(item.price * item.quantity).toLocaleString()}`
+        `- ${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`
       ).join('\n') +
       `
 
-Total: $${order.total.toLocaleString()}
-` +
-      `Notas: ${order.customer.notes || 'Ninguna'}
-` +
-      `Fecha: ${formatDate(order.timestamp)}`;
+Total: $${order.total.toFixed(2)}`;
 
     navigator.clipboard.writeText(orderText).then(() => {
       alert('Detalles del pedido copiados al portapapeles');
-    }).catch(() => {
-      alert('No se pudo copiar al portapapeles');
     });
+  };
+
+  const goToOrderTracking = () => {
+    navigate(`/order-tracking/${order.id}`);
   };
 
   return (
@@ -201,12 +224,12 @@ Total: $${order.total.toLocaleString()}
                   <span className="text-sm">✅ Pedido enviado automáticamente por email</span>
                 </div>
               )}
-              {autoSentStatus === 'whatsapp-sent' && (
+              {autoSentStatus === 'received' && (
                 <div className="flex items-center justify-center text-green-700">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm">✅ Pedido enviado automáticamente por WhatsApp</span>
+                  <span className="text-sm">✅ Pedido recibido correctamente</span>
                 </div>
               )}
             </div>
@@ -222,21 +245,21 @@ Total: $${order.total.toLocaleString()}
             <div className="space-y-2 text-sm">
               <div>
                 <span className="font-medium text-gray-700">Cliente:</span>
-                <span className="ml-2 text-gray-600">{order.customer.name}</span>
+                <span className="ml-2 text-gray-600">{getCustomerInfo().name}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-700">Teléfono:</span>
-                <span className="ml-2 text-gray-600">{order.customer.phone}</span>
+                <span className="ml-2 text-gray-600">{getCustomerInfo().phone}</span>
               </div>
-              {order.customer.email && (
+              {getCustomerInfo().email && getCustomerInfo().email !== 'N/A' && (
                 <div>
                   <span className="font-medium text-gray-700">Email:</span>
-                  <span className="ml-2 text-gray-600">{order.customer.email}</span>
+                  <span className="ml-2 text-gray-600">{getCustomerInfo().email}</span>
                 </div>
               )}
               <div>
                 <span className="font-medium text-gray-700">Dirección:</span>
-                <span className="ml-2 text-gray-600">{order.customer.address}</span>
+                <span className="ml-2 text-gray-600">{getCustomerInfo().address}</span>
               </div>
             </div>
           </div>
@@ -358,6 +381,12 @@ Total: $${order.total.toLocaleString()}
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
             >
               Cerrar
+            </button>
+            <button
+              onClick={goToOrderTracking}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Ver Seguimiento
             </button>
             <button
               onClick={onNewOrder}

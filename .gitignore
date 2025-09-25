@@ -5,3 +5,6 @@ dist/
 build/
 collections/
 .astro/
+database/
+data/
+DATABASE_MIGRATION_GUIDE.md

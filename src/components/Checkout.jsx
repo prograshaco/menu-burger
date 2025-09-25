@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import orderManager from '../services/orderManager';
+import TempUserNotification from './TempUserNotification';
+import tempUserService from '../services/tempUserService';
+import notificationService from '../services/notificationService';
 
 const Checkout = ({ cartItems, total, onClose, onOrderComplete }) => {
   const [formData, setFormData] = useState({
@@ -13,6 +16,23 @@ const Checkout = ({ cartItems, total, onClose, onOrderComplete }) => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showTempNotification, setShowTempNotification] = useState(false);
+
+  // Cargar datos del perfil temporal si existe
+  useEffect(() => {
+    const tempProfile = tempUserService.getTempProfile();
+    if (tempProfile) {
+      setFormData(prev => ({
+        ...prev,
+        name: tempProfile.name || prev.name,
+        phone: tempProfile.phone || prev.phone,
+        email: tempProfile.email || prev.email,
+        address: tempProfile.address || prev.address,
+        notes: tempProfile.notes || prev.notes
+      }));
+      setShowTempNotification(true);
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -68,22 +88,50 @@ const Checkout = ({ cartItems, total, onClose, onOrderComplete }) => {
     try {
       const orderData = {
         id: Date.now().toString(),
-        customer: formData,
         items: cartItems,
         total: total,
+        customerInfo: {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email
+        },
+        deliveryInfo: {
+          address: formData.address,
+          phone: formData.phone
+        },
+        notes: formData.notes,
+        notificationMethod: formData.notificationMethod,
         timestamp: new Date().toISOString(),
         status: 'pending'
       };
       
       // Guardar usando orderManager
-      orderManager.addOrder(orderData);
+      const result = await orderManager.addOrder(orderData);
       
-      // Llamar función de completar pedido
-      onOrderComplete(orderData);
+      if (result.success) {
+        // Mostrar mensaje específico para usuarios temporales
+        if (result.isTemporary) {
+          notificationService.notifyTempOrderCreated({
+            message: `${result.message} Puedes seguir tu pedido durante las próximas 2 horas. Te recomendamos crear una cuenta para no perder el acceso.`,
+            orderId: result.order.id,
+            duration: 8000 // Mostrar por 8 segundos
+          });
+        }
+        
+        // Llamar función de completar pedido con el pedido correcto de la base de datos
+        onOrderComplete(result.order, result.isTemporary, result.tempProfile);
+      } else {
+        throw new Error(result.error || 'Error al crear el pedido');
+      }
       
     } catch (error) {
       console.error('Error al procesar el pedido:', error);
-      alert('Error al procesar el pedido. Por favor intenta nuevamente.');
+      notificationService.addNotification({
+        type: 'error',
+        title: 'Error al procesar pedido',
+        message: 'Error al procesar el pedido. Por favor intenta nuevamente.',
+        duration: 5000
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -249,6 +297,22 @@ const Checkout = ({ cartItems, total, onClose, onOrderComplete }) => {
           </form>
         </div>
       </div>
+      
+      {/* Notificación de perfil temporal */}
+      {showTempNotification && (
+        <TempUserNotification
+          onCreateAccount={(tempProfile) => {
+            // Aquí podrías abrir un modal de registro o redirigir
+            console.log('Crear cuenta para perfil temporal:', tempProfile);
+            setShowTempNotification(false);
+          }}
+          onViewProfile={(tempProfile) => {
+            // Mostrar información del perfil temporal
+            alert(`Perfil Temporal:\n\nNombre: ${tempProfile.name}\nTeléfono: ${tempProfile.phone}\nEmail: ${tempProfile.email}\nDirección: ${tempProfile.address}\nID: ${tempProfile.id}\n\nTus pedidos se guardan automáticamente con este perfil.`);
+          }}
+          onDismiss={() => setShowTempNotification(false)}
+        />
+      )}
     </div>
   );
 };

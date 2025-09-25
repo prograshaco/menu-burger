@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import menuData from '../data/menu.json';
+import React, { useState, useMemo, useEffect } from 'react';
+import apiService from '../services/apiService';
 import MenuHeader from './MenuHeader';
 import CategoryTabs from './CategoryTabs';
 import SearchBar from './SearchBar';
@@ -19,6 +19,9 @@ const MenuApp = () => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [isAdminView, setIsAdminView] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const categories = [
     { id: 'burgers', name: 'Burgers', icon: '🍔' },
@@ -28,21 +31,40 @@ const MenuApp = () => {
     { id: 'agregados', name: 'Agregados', icon: '🥬' }
   ];
 
+  // Cargar productos desde la API
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const productsData = await apiService.getProducts();
+        setProducts(productsData);
+      } catch (err) {
+        console.error('Error al cargar productos:', err);
+        setError('Error al cargar los productos');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
   const filteredProducts = useMemo(() => {
-    let products = menuData[activeCategory] || [];
+    // Filtrar productos por categoría activa y disponibilidad
+    let categoryProducts = products.filter(product => 
+      product.category === activeCategory && product.available !== false
+    );
     
     if (searchTerm) {
-      products = products.filter(product => 
+      categoryProducts = categoryProducts.filter(product => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.ingredients && product.ingredients.some(ingredient => 
-          ingredient.toLowerCase().includes(searchTerm.toLowerCase())
-        ))
+        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     
-    return products;
-  }, [activeCategory, searchTerm]);
+    return categoryProducts;
+  }, [products, activeCategory, searchTerm]);
 
   const addToCart = (product) => {
     setCart(prevCart => {
@@ -104,6 +126,36 @@ const MenuApp = () => {
   // Si está en vista de administrador, mostrar solo el dashboard
   if (isAdminView) {
     return <AdminDashboard onBackToMenu={() => setIsAdminView(false)} />;
+  }
+
+  // Mostrar estado de carga
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🍔</div>
+          <div className="text-xl">Cargando menú...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error si hay algún problema
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">❌</div>
+          <div className="text-xl text-red-400 mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
