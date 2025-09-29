@@ -8,3 +8,16 @@ collections/
 database/
 data/
 DATABASE_MIGRATION_GUIDE.md
+
+# Test files and development scripts
+test-*.js
+*-test.js
+check-*.js
+add-test-*.js
+minimal-*.js
+simplified-*.js
+
+# Temporary files
+*.tmp
+*.temp
+*.log
