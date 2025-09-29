@@ -1,5 +1,5 @@
 // Servicio API para comunicarse con el backend SQLite
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3006/api';
 
 class ApiService {
   // Método de inicialización (para compatibilidad)
@@ -190,9 +190,10 @@ class ApiService {
     return this.createReview(reviewData);
   }
 
-  async deleteReview(id) {
+  async deleteReview(id, adminId = null) {
     return this.request(`/reviews/${id}`, {
       method: 'DELETE',
+      body: { adminId },
     });
   }
 

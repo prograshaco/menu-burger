@@ -714,26 +714,82 @@ class SQLiteDatabaseService {
   // ==================== MÉTODOS DE RESEÑAS ====================
 
   async createReview(reviewData) {
-    const stmt = this.db.prepare(`
-      INSERT INTO reviews (id, user_id, user_name, rating, comment, approved)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
+    console.log('🔍 Iniciando createReview con datos:', reviewData);
+    
+    try {
+      const userId = reviewData.userId || reviewData.user_id;
+      const userName = reviewData.userName || reviewData.user_name || 'Usuario Anónimo';
+      
+      // Verificar si el usuario existe en la base de datos
+      let finalUserId = userId;
+      if (userId) {
+        console.log('🔍 Verificando si el usuario existe:', userId);
+        const existingUser = this.getUserById(userId);
+        
+        if (!existingUser) {
+          console.log('⚠️ Usuario no encontrado, creando usuario automáticamente...');
+          // Crear el usuario automáticamente con datos básicos
+          const newUserData = {
+            id: userId,
+            username: userName.toLowerCase().replace(/\s+/g, '_'),
+            email: `${userId}@temp.com`, // Email temporal
+            password: 'temp_password', // Contraseña temporal
+            name: userName,
+            role: 'customer',
+            phone: '',
+            address: '',
+            active: 1
+          };
+          
+          try {
+            await this.createUser(newUserData);
+            console.log('✅ Usuario creado automáticamente:', userId);
+          } catch (userError) {
+            console.log('⚠️ Error al crear usuario, continuando sin restricción de clave foránea...');
+            // Si no se puede crear el usuario, usar null como user_id
+            finalUserId = null;
+          }
+        } else {
+          console.log('✅ Usuario existe en la base de datos');
+        }
+      }
 
-    const newReview = {
-      id: this.generateId('review'),
-      user_id: reviewData.user_id || null,
-      user_name: reviewData.userName || reviewData.user_name || 'Usuario Anónimo',
-      rating: reviewData.rating,
-      comment: reviewData.comment || null,
-      approved: reviewData.approved ? 1 : 0
-    };
+      console.log('🔍 Generando ID de reseña...');
+      const reviewId = this.generateId('review');
+      console.log('🔍 ID generado:', reviewId);
 
-    stmt.run(
-      newReview.id, newReview.user_id, newReview.user_name,
-      newReview.rating, newReview.comment, newReview.approved
-    );
+      console.log('🔍 Preparando statement...');
+      const stmt = this.db.prepare(`
+        INSERT INTO reviews (id, user_id, user_name, rating, comment, approved)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      console.log('🔍 Statement preparado');
 
-    return newReview;
+      const newReview = {
+        id: reviewId,
+        user_id: finalUserId,
+        user_name: userName,
+        rating: reviewData.rating,
+        comment: reviewData.comment || null,
+        approved: reviewData.approved ? 1 : 0
+      };
+
+      console.log('🔍 Objeto newReview creado:', newReview);
+
+      console.log('🔍 Ejecutando statement...');
+      stmt.run(
+        newReview.id, newReview.user_id, newReview.user_name,
+        newReview.rating, newReview.comment, newReview.approved
+      );
+      console.log('🔍 Statement ejecutado exitosamente');
+
+      console.log('✅ Reseña creada exitosamente:', newReview);
+      return newReview;
+    } catch (error) {
+      console.error('❌ Error al crear reseña en SQLite:', error);
+      console.error('❌ Stack trace:', error.stack);
+      throw error;
+    }
   }
 
   async getAllReviews(includeUnapproved = false) {

@@ -171,7 +171,7 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
   // Opcional: mantener para compatibilidad, pero recalcula igual que loadDashboardData
   const loadStats = () => {
     const allOrders = orderManager.getAllOrders() || [];
-
+    const usersData = apiService.getAllUsers();
     const totalRevenue = allOrders.reduce(
       (sum, o) => sum + Number(o?.total || 0),
       0
@@ -464,7 +464,10 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
   // Funciones para manejar reseñas
   const handleApproveReview = async (reviewId) => {
     try {
-      await apiService.updateReviewApproval(reviewId, true);
+      const currentUser = authService.getCurrentUser();
+      const adminId = currentUser?.id || 1; // Usar ID del admin actual o 1 por defecto
+      
+      await apiService.updateReviewApproval(reviewId, true, adminId);
       setNotification({
         type: 'success',
         message: 'Reseña aprobada correctamente'
@@ -486,7 +489,10 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
       message: '¿Estás seguro de que quieres eliminar esta reseña? Esta acción no se puede deshacer.',
       onConfirm: async () => {
         try {
-          await apiService.deleteReview(reviewId);
+          const currentUser = authService.getCurrentUser();
+          const adminId = currentUser?.id || 1; // Usar ID del admin actual o 1 por defecto
+          
+          await apiService.deleteReview(reviewId, adminId);
           setNotification({
             type: 'success',
             message: 'Reseña eliminada correctamente'
@@ -1090,7 +1096,7 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
                             {reviews.map((review) => (
                               <tr key={review?.id}>
                                 <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                                  {review?.userName || 'Usuario Anónimo'}
+                                  {review?.user_name || 'Usuario Anónimo'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                   <div className="flex items-center">

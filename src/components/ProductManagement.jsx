@@ -101,7 +101,7 @@ const ProductManagement = () => {
       const formData = new FormData();
       formData.append('image', selectedFile);
 
-      const response = await fetch('http://localhost:3001/api/upload/image', {
+      const response = await fetch('http://localhost:3006/api/upload/image', {
         method: 'POST',
         body: formData,
       });
@@ -111,7 +111,7 @@ const ProductManagement = () => {
       }
 
       const result = await response.json();
-      return `http://localhost:3001${result.imageUrl}`;
+      return `http://localhost:3006${result.imageUrl}`;
     } catch (error) {
       console.error('Error al subir imagen:', error);
       throw error;

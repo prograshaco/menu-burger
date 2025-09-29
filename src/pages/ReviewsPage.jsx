@@ -183,7 +183,7 @@ const ReviewsPage = () => {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-800">
-                          {review.userName}
+                          {review.user_name || review.userName || 'Usuario Anónimo'}
                         </h4>
                         <div className="flex items-center space-x-2 text-sm text-gray-500">
                           <Calendar className="w-4 h-4" />
