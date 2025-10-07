@@ -287,8 +287,12 @@ git commit -m "Resolver conflictos"
 Si tienes problemas o dudas:
 1. Revisa esta guía primero
 2. Busca el error en Google
-3. Pregunta al administrador del proyecto
-4. Documenta el problema para futuras referencias
+3. Buscalo en GPT
+4. Buscalo en Geminai
+5. Buscalo en DeepSeek
+6. Buscalo en Stackoverflow
+7. Pregunta al administrador del proyecto (No lo hagas KJASDFJK)
+8. Documenta el problema para futuras referencias (Sera un feature 🤑)
 
 ---
 
