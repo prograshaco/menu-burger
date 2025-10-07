@@ -903,6 +903,15 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
                               <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}><span className="font-medium">Cliente:</span> {order?.customer?.name || order?.customerName || 'Cliente Anónimo'}</p>
                               <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}><span className="font-medium">Teléfono:</span> {order?.customer?.phone || 'No especificado'}</p>
                               <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}><span className="font-medium">Dirección:</span> {order?.customer?.address || 'No especificado'}</p>
+                              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}><span className="font-medium">Notificación:</span> {
+                                order?.notificationMethod === 'email' ? 'Email' :
+                                order?.notificationMethod === 'whatsapp' ? 'WhatsApp' :
+                                order?.notificationMethod === 'phone' ? 'Llamada' :
+                                order?.customer?.notificationMethod === 'email' ? 'Email' :
+                                order?.customer?.notificationMethod === 'whatsapp' ? 'WhatsApp' :
+                                order?.customer?.notificationMethod === 'phone' ? 'Llamada' :
+                                'Email'
+                              }</p>
                               {order?.receivedBy && (
                                 <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                                   <span className="font-medium">Recibido por:</span> {order.receivedBy}
@@ -1199,8 +1208,23 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
                         <p><span className="font-medium">Email:</span> {selectedOrder.customer.email}</p>
                       )}
                       <p><span className="font-medium">Dirección:</span> {selectedOrder?.customer?.address || 'No especificado'}</p>
-                      {selectedOrder?.customer?.notes && (
-                        <p><span className="font-medium">Notas:</span> {selectedOrder.customer.notes}</p>
+                      <p><span className="font-medium">Método de notificación:</span> {
+                        selectedOrder?.notificationMethod === 'email' ? 'Email' :
+                        selectedOrder?.notificationMethod === 'whatsapp' ? 'WhatsApp' :
+                        selectedOrder?.notificationMethod === 'phone' ? 'Llamada telefónica' :
+                        selectedOrder?.customer?.notificationMethod === 'email' ? 'Email' :
+                        selectedOrder?.customer?.notificationMethod === 'whatsapp' ? 'WhatsApp' :
+                        selectedOrder?.customer?.notificationMethod === 'phone' ? 'Llamada telefónica' :
+                        'Email'
+                      }</p>
+                      {selectedOrder?.receivedBy && (
+                        <p><span className="font-medium">Recibido por:</span> {selectedOrder.receivedBy}</p>
+                      )}
+                      {selectedOrder?.deliveredAt && (
+                        <p><span className="font-medium">Entregado el:</span> {new Date(selectedOrder.deliveredAt).toLocaleString()}</p>
+                      )}
+                      {selectedOrder?.notes && (
+                        <p><span className="font-medium">Notas:</span> {selectedOrder.notes}</p>
                       )}
                     </div>
                   </div>

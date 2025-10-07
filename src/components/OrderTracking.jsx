@@ -13,25 +13,36 @@ const OrderTracking = ({ orderId, onClose }) => {
     
     // Suscribirse a actualizaciones en tiempo real
     const handleOrderUpdate = (event) => {
-      const { type, data } = event.detail;
+      console.log('🔄 Evento orderUpdate recibido en OrderTracking:', event.detail);
+      const { type, data } = event.detail || {};
       if (type === 'orderUpdated' && data?.id === orderId) {
+        console.log('✅ Actualizando pedido en OrderTracking:', data);
         setOrder(data);
       }
     };
 
     window.addEventListener('orderUpdate', handleOrderUpdate);
     
+    // Polling como respaldo (cada 30 segundos)
+    const pollingInterval = setInterval(() => {
+      console.log('🔄 Polling: Verificando actualizaciones del pedido');
+      loadOrder();
+    }, 30000);
+    
     return () => {
       window.removeEventListener('orderUpdate', handleOrderUpdate);
+      clearInterval(pollingInterval);
     };
   }, [orderId]);
 
   const loadOrder = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Cargando pedido:', orderId);
       const orderData = await orderManager.getOrderById(orderId);
       
       if (orderData) {
+        console.log('✅ Pedido cargado:', orderData);
         setOrder(orderData);
       } else {
         setError('Pedido no encontrado');
@@ -42,6 +53,11 @@ const OrderTracking = ({ orderId, onClose }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const refreshOrder = async () => {
+    console.log('🔄 Refrescando pedido manualmente');
+    await loadOrder();
   };
 
   const getStepStatus = (stepStatus, currentStatus) => {
@@ -140,14 +156,25 @@ const OrderTracking = ({ orderId, onClose }) => {
               <h2 className="text-2xl font-bold text-white">Seguimiento de Pedido</h2>
               <p className="text-orange-100">Pedido #{order.id}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-orange-200 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={refreshOrder}
+                className="text-white hover:text-orange-200 transition-colors p-1"
+                title="Actualizar estado"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button
+                onClick={onClose}
+                className="text-white hover:text-orange-200 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 

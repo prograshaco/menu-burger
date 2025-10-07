@@ -94,6 +94,12 @@ class AuthService {
         role: 'customer'
       });
       
+      console.log('🔍 Resultado del registro:', result);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Error al registrar usuario');
+      }
+      
       const newUser = result.user;
 
       // Generar token y establecer sesión

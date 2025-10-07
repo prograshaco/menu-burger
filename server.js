@@ -4,16 +4,26 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 
-// Importar sqliteDatabase de manera más segura
-let sqliteDatabase;
+// Importar base de datos (Turso o SQLite como fallback)
+let database;
 try {
-  const { default: db } = await import('./src/services/sqliteDatabase.js');
-  sqliteDatabase = db;
-  console.log('✅ sqliteDatabase importado correctamente');
-} catch (error) {
-  console.error('❌ Error al importar sqliteDatabase:', error);
-  console.error('❌ Stack trace:', error.stack);
-  process.exit(1);
+  // Intentar usar Turso primero
+  const { default: tursoDb } = await import('./src/services/tursoDatabase.js');
+  database = tursoDb;
+  console.log('✅ Turso Database importado correctamente');
+} catch (tursoError) {
+  console.warn('⚠️ Error al importar Turso Database:', tursoError.message);
+  console.log('🔄 Intentando usar SQLite como fallback...');
+  
+  try {
+    const { default: sqliteDb } = await import('./src/services/sqliteDatabase.js');
+    database = sqliteDb;
+    console.log('✅ SQLite Database importado como fallback');
+  } catch (sqliteError) {
+    console.error('❌ Error al importar ambas bases de datos:', sqliteError);
+    console.error('❌ Stack trace:', sqliteError.stack);
+    process.exit(1);
+  }
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,45 +47,38 @@ app.post('/api/reviews', async (req, res) => {
   try {
     console.log('🔍 Intentando crear reseña...');
     
-    // Verificar que sqliteDatabase esté disponible
-    if (!sqliteDatabase) {
-      console.error('❌ sqliteDatabase no está disponible');
+    // Verificar que database esté disponible
+    if (!database) {
+      console.error('❌ Database no está disponible');
       return res.status(500).json({ error: 'Base de datos no disponible' });
     }
     
-    console.log('🔍 sqliteDatabase disponible');
-    console.log('🔍 Tipo de sqliteDatabase:', typeof sqliteDatabase);
-    console.log('🔍 Métodos disponibles:', Object.getOwnPropertyNames(Object.getPrototypeOf(sqliteDatabase)));
+    console.log('🔍 Database disponible');
+    console.log('🔍 Tipo de database:', typeof database);
+    console.log('🔍 Métodos disponibles:', Object.getOwnPropertyNames(Object.getPrototypeOf(database)));
     
     // Verificar que el método createReview existe
-    if (typeof sqliteDatabase.createReview !== 'function') {
-      console.error('❌ createReview no es una función');
+    if (typeof database.createReview !== 'function') {
+      console.error('❌ Método createReview no encontrado en database');
       return res.status(500).json({ error: 'Método createReview no disponible' });
     }
     
-    console.log('🔍 Llamando createReview...');
-    const review = await sqliteDatabase.createReview(req.body);
+    const review = await database.createReview(req.body);
     console.log('✅ Reseña creada exitosamente:', review);
     res.json(review);
   } catch (error) {
-    console.error('❌ Error detallado al crear reseña:', error);
-    console.error('❌ Mensaje del error:', error.message);
-    console.error('❌ Stack trace:', error.stack);
-    
-    // Asegurar que siempre enviamos una respuesta
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Error al crear reseña', details: error.message });
-    }
+    console.error('❌ Error creando reseña:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/reviews', async (req, res) => {
   try {
     const includeUnapproved = req.query.includeUnapproved === 'true';
-    const reviews = await sqliteDatabase.getAllReviews(includeUnapproved);
+    const reviews = await database.getAllReviews(includeUnapproved);
     res.json(reviews);
   } catch (error) {
-    console.error('Error al obtener reseñas:', error);
+    console.error('Error obteniendo reseñas:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
@@ -98,8 +101,8 @@ app.listen(PORT, () => {
 
 // Manejar cierre graceful
 process.on('SIGINT', async () => {
-  console.log('Cerrando servidor...');
-  await sqliteDatabase.close();
+  console.log('\n🔄 Cerrando servidor...');
+  await database.close();
   process.exit(0);
 });
 
@@ -141,13 +144,14 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    const user = await sqliteDatabase.getUserByUsername(username);
+    const user = await database.getUserByUsername(username);
     
     if (!user || user.password !== password) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
     
-    res.json({ user: { ...user, password: undefined } });
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ user: userWithoutPassword });
   } catch (error) {
     console.error('Error en login:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -156,235 +160,231 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const userData = req.body;
-    const newUser = await sqliteDatabase.createUser(userData);
-    res.json({ user: { ...newUser, password: undefined } });
+    console.log('🔍 Datos de registro recibidos:', req.body);
+    const newUser = await database.createUser(req.body);
+    console.log('✅ Usuario creado exitosamente:', newUser);
+    
+    // Devolver en el formato esperado por el frontend
+    res.json({ 
+      success: true,
+      user: newUser,
+      message: 'Usuario registrado exitosamente'
+    });
   } catch (error) {
-    console.error('Error en registro:', error);
-    res.status(500).json({ error: 'Error al crear usuario' });
+    console.error('❌ Error en registro:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message || 'Error interno del servidor' 
+    });
   }
 });
 
 // Rutas de usuarios
 app.get('/api/users', async (req, res) => {
   try {
-    const users = await sqliteDatabase.getAllUsers();
-    res.json(users.map(user => ({ ...user, password: undefined })));
+    const users = await database.getAllUsers();
+    res.json(users);
   } catch (error) {
-    console.error('Error al obtener usuarios:', error);
+    console.error('Error obteniendo usuarios:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/users/:id', async (req, res) => {
   try {
-    const user = await sqliteDatabase.getUserById(req.params.id);
+    const user = await database.getUserById(req.params.id);
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    res.json({ ...user, password: undefined });
+    res.json(user);
   } catch (error) {
-    console.error('Error al obtener usuario:', error);
+    console.error('Error obteniendo usuario:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.put('/api/users/:id', async (req, res) => {
   try {
-    const updatedUser = await sqliteDatabase.updateUser(req.params.id, req.body);
-    res.json({ ...updatedUser, password: undefined });
+    const updatedUser = await database.updateUser(req.params.id, req.body);
+    res.json(updatedUser);
   } catch (error) {
-    console.error('Error al actualizar usuario:', error);
-    res.status(500).json({ error: 'Error al actualizar usuario' });
+    console.error('Error actualizando usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.post('/api/users', async (req, res) => {
   try {
-    const newUser = await sqliteDatabase.createUser(req.body);
-    res.json({ ...newUser, password: undefined });
+    const newUser = await database.createUser(req.body);
+    res.json(newUser);
   } catch (error) {
-    console.error('Error al crear usuario:', error);
-    res.status(500).json({ error: 'Error al crear usuario' });
+    console.error('Error creando usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.delete('/api/users/:id', async (req, res) => {
   try {
-    const deleted = await sqliteDatabase.deleteUser(req.params.id);
-    if (deleted) {
-      res.json({ success: true, message: 'Usuario eliminado correctamente' });
-    } else {
-      res.status(404).json({ error: 'Usuario no encontrado' });
+    const deleted = await database.deleteUser(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
     }
+    res.json({ message: 'Usuario eliminado exitosamente' });
   } catch (error) {
-    console.error('Error al eliminar usuario:', error);
-    res.status(500).json({ error: error.message || 'Error al eliminar usuario' });
+    console.error('Error eliminando usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.patch('/api/users/:id/toggle', async (req, res) => {
   try {
     const { active } = req.body;
-    const updatedUser = await sqliteDatabase.updateUser(req.params.id, { active: active ? 1 : 0 });
-    res.json({ ...updatedUser, password: undefined });
+    const updatedUser = await database.updateUser(req.params.id, { active: active ? 1 : 0 });
+    res.json(updatedUser);
   } catch (error) {
-    console.error('Error al cambiar estado del usuario:', error);
-    res.status(500).json({ error: 'Error al cambiar estado del usuario' });
+    console.error('Error actualizando estado del usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
-// Rutas de productos (rutas específicas primero, luego las genéricas)
+// Rutas de productos
 app.get('/api/products/all', async (req, res) => {
   try {
-    const products = await sqliteDatabase.getAllProducts();
+    const products = await database.getAllProducts();
     res.json(products);
   } catch (error) {
-    console.error('Error al obtener todos los productos:', error);
+    console.error('Error obteniendo productos:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/products/categories', async (req, res) => {
   try {
-    const categories = await sqliteDatabase.getProductCategories();
+    const categories = await database.getProductCategories();
     res.json(categories);
   } catch (error) {
-    console.error('Error al obtener categorías:', error);
+    console.error('Error obteniendo categorías:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/products/category/:category', async (req, res) => {
   try {
-    const products = await sqliteDatabase.getProductsByCategory(req.params.category);
+    const products = await database.getProductsByCategory(req.params.category);
     res.json(products);
   } catch (error) {
-    console.error('Error al obtener productos por categoría:', error);
+    console.error('Error obteniendo productos por categoría:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/products', async (req, res) => {
   try {
-    const products = await sqliteDatabase.getProducts();
+    const products = await database.getProducts();
     res.json(products);
   } catch (error) {
-    console.error('Error al obtener productos:', error);
+    console.error('Error obteniendo productos:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/products/:id', async (req, res) => {
   try {
-    const product = await sqliteDatabase.getProductById(req.params.id);
+    const product = await database.getProductById(req.params.id);
     if (!product) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
     res.json(product);
   } catch (error) {
-    console.error('Error al obtener producto:', error);
+    console.error('Error obteniendo producto:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.post('/api/products', async (req, res) => {
   try {
-    const productData = req.body;
+    const productData = {
+      name: req.body.name,
+      description: req.body.description,
+      price: parseFloat(req.body.price),
+      category: req.body.category,
+      image_url: req.body.image_url || '',
+      available: req.body.available !== false
+    };
     
-    // Validaciones básicas
-    if (!productData.name || !productData.price || !productData.category) {
-      return res.status(400).json({ 
-        error: 'Faltan campos requeridos: name, price, category' 
-      });
-    }
-
-    const newProduct = await sqliteDatabase.createProduct(productData);
+    const newProduct = await database.createProduct(productData);
     res.json(newProduct);
   } catch (error) {
-    console.error('Error al crear producto:', error);
-    res.status(500).json({ error: 'Error al crear producto' });
+    console.error('Error creando producto:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.put('/api/products/:id', async (req, res) => {
   try {
     const productId = req.params.id;
-    const updates = req.body;
+    const updates = {
+      name: req.body.name,
+      description: req.body.description,
+      price: parseFloat(req.body.price),
+      category: req.body.category,
+      image_url: req.body.image_url,
+      available: req.body.available
+    };
     
-    const updatedProduct = await sqliteDatabase.updateProduct(productId, updates);
+    const updatedProduct = await database.updateProduct(productId, updates);
     res.json(updatedProduct);
   } catch (error) {
-    console.error('Error al actualizar producto:', error);
-    if (error.message === 'Producto no encontrado') {
-      return res.status(404).json({ error: error.message });
-    }
-    res.status(500).json({ error: 'Error al actualizar producto' });
+    console.error('Error actualizando producto:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.delete('/api/products/:id', async (req, res) => {
   try {
     const productId = req.params.id;
-    const result = await sqliteDatabase.deleteProduct(productId);
-    res.json(result);
-  } catch (error) {
-    console.error('Error al eliminar producto:', error);
-    if (error.message === 'Producto no encontrado') {
-      return res.status(404).json({ error: error.message });
+    const result = await database.deleteProduct(productId);
+    
+    if (!result.success) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
     }
-    res.status(500).json({ error: 'Error al eliminar producto' });
+    
+    res.json({ message: 'Producto eliminado exitosamente' });
+  } catch (error) {
+    console.error('Error eliminando producto:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.delete('/api/products/:id/hard', async (req, res) => {
   try {
     const productId = req.params.id;
-    const result = await sqliteDatabase.hardDeleteProduct(productId);
-    res.json(result);
-  } catch (error) {
-    console.error('Error al eliminar producto permanentemente:', error);
-    if (error.message === 'Producto no encontrado') {
-      return res.status(404).json({ error: error.message });
+    const result = await database.hardDeleteProduct(productId);
+    
+    if (!result.success) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
     }
-    res.status(500).json({ error: 'Error al eliminar producto permanentemente' });
+    
+    res.json({ message: 'Producto eliminado permanentemente' });
+  } catch (error) {
+    console.error('Error eliminando producto permanentemente:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.patch('/api/products/:id/toggle', async (req, res) => {
   try {
     const productId = req.params.id;
-    const updatedProduct = await sqliteDatabase.toggleProductAvailability(productId);
+    const updatedProduct = await database.toggleProductAvailability(productId);
+    
+    if (!updatedProduct.success) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    
     res.json(updatedProduct);
   } catch (error) {
-    console.error('Error al cambiar disponibilidad del producto:', error);
-    if (error.message === 'Producto no encontrado') {
-      return res.status(404).json({ error: error.message });
-    }
-    res.status(500).json({ error: 'Error al cambiar disponibilidad del producto' });
-  }
-});
-
-// Endpoint para subir imágenes
-app.post('/api/upload/image', upload.single('image'), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No se ha subido ningún archivo' });
-    }
-
-    // Construir la URL completa del archivo
-    const imageUrl = `/uploads/images/${req.file.filename}`;
-    
-    res.json({
-      success: true,
-      imageUrl: imageUrl,
-      filename: req.file.filename,
-      originalName: req.file.originalname,
-      size: req.file.size
-    });
-  } catch (error) {
-    console.error('Error al subir imagen:', error);
-    res.status(500).json({ error: 'Error al subir la imagen' });
+    console.error('Error cambiando disponibilidad del producto:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
@@ -393,71 +393,72 @@ app.post('/api/orders', async (req, res) => {
   try {
     const orderData = req.body;
     
-    // Mapear los campos del frontend a los campos de la base de datos
-    const timestamp = Date.now();
-    
-    // Asegurar que items sea un array válido
-    const items = orderData.items && Array.isArray(orderData.items) ? orderData.items : [];
-    const itemsJson = JSON.stringify(items);
+    console.log('🔍 Datos del pedido recibidos:', JSON.stringify(orderData, null, 2));
     
     const dbOrderData = {
-      id: orderData.id || timestamp.toString(),
-      number: orderData.number || `ORD-${timestamp}`,
-      date: orderData.date || new Date().toISOString(),
-      client_name: orderData.customerName || orderData.client_name || 'Cliente',
-      client_email: orderData.customerEmail || orderData.client_email || 'cliente@ejemplo.com',
-      client_phone: orderData.phone || orderData.client_phone || '',
-      client_address: orderData.deliveryAddress || orderData.client_address || '',
-      items_json: itemsJson,
+      userId: orderData.userId || null,
+      userName: orderData.customerName || orderData.customerInfo?.name || orderData.userName || 'Cliente Anónimo',
+      userEmail: orderData.customerEmail || orderData.customerInfo?.email || orderData.userEmail || '',
+      userPhone: orderData.phone || orderData.customerInfo?.phone || orderData.userPhone || orderData.deliveryInfo?.phone || '',
+      userAddress: orderData.deliveryAddress || orderData.customerInfo?.address || orderData.userAddress || orderData.deliveryInfo?.address || '',
+      items: orderData.items || [],
+      total: orderData.total || 0,
+      status: orderData.status || 'pending',
+      paymentMethod: orderData.paymentMethod || '',
       notes: orderData.notes || '',
-      subtotal: parseFloat(orderData.subtotal || orderData.total || 0),
-      tax: parseFloat(orderData.tax || 0),
-      total: parseFloat(orderData.total || 0),
-      status: orderData.status || 'pending'
+      notificationMethod: orderData.notificationMethod || 'email'
     };
     
-    // Validación adicional para campos NOT NULL
-    if (!dbOrderData.items_json || dbOrderData.items_json === 'null' || dbOrderData.items_json === 'undefined') {
-      dbOrderData.items_json = '[]';
-    }
+    console.log('🔍 Datos mapeados para la base de datos:', JSON.stringify(dbOrderData, null, 2));
+    console.log('🔍 Valores específicos:');
+    console.log('  - userName:', dbOrderData.userName);
+    console.log('  - userEmail:', dbOrderData.userEmail);
+    console.log('  - userPhone:', dbOrderData.userPhone);
+    console.log('  - userAddress:', dbOrderData.userAddress);
+    console.log('  - notificationMethod:', dbOrderData.notificationMethod);
     
-    const order = await sqliteDatabase.createOrder(dbOrderData);
-    res.json({ success: true, order });
+    const result = await database.createOrder(dbOrderData);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json({ error: result.error || 'Error creando la orden' });
+    }
   } catch (error) {
-    console.error('Error al crear pedido:', error);
-    res.status(500).json({ success: false, error: 'Error al crear pedido' });
+    console.error('Error creando orden:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/orders', async (req, res) => {
   try {
-    const orders = await sqliteDatabase.getAllOrders();
+    const orders = await database.getAllOrders();
     res.json(orders);
   } catch (error) {
-    console.error('Error al obtener pedidos:', error);
+    console.error('Error obteniendo órdenes:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/orders/user/:userId', async (req, res) => {
   try {
-    const orders = await sqliteDatabase.getOrdersByUser(req.params.userId);
+    const orders = await database.getOrdersByUser(req.params.userId);
     res.json(orders);
   } catch (error) {
-    console.error('Error al obtener pedidos del usuario:', error);
+    console.error('Error obteniendo órdenes del usuario:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/orders/:id', async (req, res) => {
   try {
-    const order = await sqliteDatabase.getOrderById(req.params.id);
+    const order = await database.getOrderById(req.params.id);
     if (!order) {
-      return res.status(404).json({ error: 'Pedido no encontrado' });
+      return res.status(404).json({ error: 'Orden no encontrada' });
     }
     res.json(order);
   } catch (error) {
-    console.error('Error al obtener pedido:', error);
+    console.error('Error obteniendo orden:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
@@ -465,11 +466,11 @@ app.get('/api/orders/:id', async (req, res) => {
 app.put('/api/orders/:id/status', async (req, res) => {
   try {
     const { status, adminId } = req.body;
-    const updatedOrder = await sqliteDatabase.updateOrderStatus(req.params.id, status, adminId);
+    const updatedOrder = await database.updateOrderStatus(req.params.id, status, adminId);
     res.json(updatedOrder);
   } catch (error) {
-    console.error('Error al actualizar estado del pedido:', error);
-    res.status(500).json({ error: 'Error al actualizar pedido' });
+    console.error('Error actualizando estado de orden:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
@@ -478,18 +479,18 @@ app.put('/api/orders/:id', async (req, res) => {
     const orderId = req.params.id;
     const updateData = req.body;
     
-    // Verificar que el pedido existe
-    const existingOrder = await sqliteDatabase.getOrderById(orderId);
+    // Verificar que la orden existe
+    const existingOrder = await database.getOrderById(orderId);
     if (!existingOrder) {
-      return res.status(404).json({ error: 'Pedido no encontrado' });
+      return res.status(404).json({ error: 'Orden no encontrada' });
     }
     
-    // Actualizar el pedido (implementar en sqliteDatabase si no existe)
-    const updatedOrder = await sqliteDatabase.updateOrder(orderId, updateData);
+    // Actualizar el pedido (implementar en database si no existe)
+    const updatedOrder = await database.updateOrder(orderId, updateData);
     res.json(updatedOrder);
   } catch (error) {
-    console.error('Error al actualizar pedido:', error);
-    res.status(500).json({ error: 'Error al actualizar pedido' });
+    console.error('Error actualizando orden:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
@@ -497,22 +498,23 @@ app.delete('/api/orders/:id', async (req, res) => {
   try {
     const orderId = req.params.id;
     
-    // Verificar que el pedido existe
-    const existingOrder = await sqliteDatabase.getOrderById(orderId);
+    // Verificar que la orden existe
+    const existingOrder = await database.getOrderById(orderId);
     if (!existingOrder) {
-      return res.status(404).json({ error: 'Pedido no encontrado' });
+      return res.status(404).json({ error: 'Orden no encontrada' });
     }
     
-    // Eliminar el pedido (implementar en sqliteDatabase si no existe)
-    const result = await sqliteDatabase.deleteOrder(orderId);
-    if (result) {
-      res.json({ success: true, message: 'Pedido eliminado correctamente' });
-    } else {
-      res.status(500).json({ error: 'Error al eliminar pedido' });
+    // Eliminar el pedido (implementar en database si no existe)
+    const result = await database.deleteOrder(orderId);
+    
+    if (!result.success) {
+      return res.status(500).json({ error: 'Error eliminando la orden' });
     }
+    
+    res.json({ message: 'Orden eliminada exitosamente' });
   } catch (error) {
-    console.error('Error al eliminar pedido:', error);
-    res.status(500).json({ error: 'Error al eliminar pedido' });
+    console.error('Error eliminando orden:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
@@ -524,45 +526,38 @@ app.post('/api/reviews', async (req, res) => {
   try {
     console.log('🔍 Intentando crear reseña...');
     
-    // Verificar que sqliteDatabase esté disponible
-    if (!sqliteDatabase) {
-      console.error('❌ sqliteDatabase no está disponible');
+    // Verificar que database esté disponible
+    if (!database) {
+      console.error('❌ Database no está disponible');
       return res.status(500).json({ error: 'Base de datos no disponible' });
     }
     
-    console.log('🔍 sqliteDatabase disponible');
-    console.log('🔍 Tipo de sqliteDatabase:', typeof sqliteDatabase);
-    console.log('🔍 Métodos disponibles:', Object.getOwnPropertyNames(Object.getPrototypeOf(sqliteDatabase)));
+    console.log('🔍 Database disponible');
+    console.log('🔍 Tipo de database:', typeof database);
+    console.log('🔍 Métodos disponibles:', Object.getOwnPropertyNames(Object.getPrototypeOf(database)));
     
     // Verificar que el método createReview existe
-    if (typeof sqliteDatabase.createReview !== 'function') {
-      console.error('❌ createReview no es una función');
+    if (typeof database.createReview !== 'function') {
+      console.error('❌ Método createReview no encontrado en database');
       return res.status(500).json({ error: 'Método createReview no disponible' });
     }
     
-    console.log('🔍 Llamando createReview...');
-    const review = await sqliteDatabase.createReview(req.body);
+    const review = await database.createReview(req.body);
     console.log('✅ Reseña creada exitosamente:', review);
     res.json(review);
   } catch (error) {
-    console.error('❌ Error detallado al crear reseña:', error);
-    console.error('❌ Mensaje del error:', error.message);
-    console.error('❌ Stack trace:', error.stack);
-    
-    // Asegurar que siempre enviamos una respuesta
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Error al crear reseña', details: error.message });
-    }
+    console.error('❌ Error creando reseña:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.get('/api/reviews', async (req, res) => {
   try {
     const includeUnapproved = req.query.includeUnapproved === 'true';
-    const reviews = await sqliteDatabase.getAllReviews(includeUnapproved);
+    const reviews = await database.getAllReviews(includeUnapproved);
     res.json(reviews);
   } catch (error) {
-    console.error('Error al obtener reseñas:', error);
+    console.error('Error obteniendo reseñas:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
@@ -570,48 +565,49 @@ app.get('/api/reviews', async (req, res) => {
 app.put('/api/reviews/:id/approval', async (req, res) => {
   try {
     const { isApproved, adminId } = req.body;
-    const updatedReview = await sqliteDatabase.updateReviewApproval(req.params.id, isApproved, adminId);
+    const updatedReview = await database.updateReviewApproval(req.params.id, isApproved, adminId);
     res.json(updatedReview);
   } catch (error) {
-    console.error('Error al actualizar aprobación de reseña:', error);
-    res.status(500).json({ error: 'Error al actualizar reseña' });
+    console.error('Error actualizando aprobación de reseña:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 app.delete('/api/reviews/:id', async (req, res) => {
   try {
     const { adminId } = req.body;
-    const deleted = await sqliteDatabase.deleteReview(req.params.id, adminId);
-    if (deleted) {
-      res.json({ success: true, message: 'Reseña eliminada correctamente' });
-    } else {
-      res.status(404).json({ error: 'Reseña no encontrada' });
+    const deleted = await database.deleteReview(req.params.id, adminId);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Reseña no encontrada' });
     }
+    res.json({ message: 'Reseña eliminada exitosamente' });
   } catch (error) {
-    console.error('Error al eliminar reseña:', error);
-    res.status(500).json({ error: 'Error al eliminar reseña' });
+    console.error('Error eliminando reseña:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 // Rutas de estadísticas
 app.get('/api/stats', async (req, res) => {
   try {
-    const stats = await sqliteDatabase.getStats();
+    const stats = await database.getStats();
     res.json(stats);
   } catch (error) {
-    console.error('Error al obtener estadísticas:', error);
+    console.error('Error obteniendo estadísticas:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
+
 
 // Rutas de logs de actividad
 app.post('/api/activity-logs', async (req, res) => {
   try {
     const { action, description, userId } = req.body;
-    await sqliteDatabase.logActivity(action, description, userId);
-    res.json({ success: true });
+    await database.logActivity(action, description, userId);
+    res.json({ message: 'Log registrado exitosamente' });
   } catch (error) {
-    console.error('Error al registrar actividad:', error);
+    console.error('Error al registrar log:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
@@ -619,10 +615,44 @@ app.post('/api/activity-logs', async (req, res) => {
 app.get('/api/activity-logs', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
-    const logs = await sqliteDatabase.getActivityLogs(limit);
+    const logs = await database.getActivityLogs(limit);
     res.json(logs);
   } catch (error) {
-    console.error('Error al obtener logs de actividad:', error);
+    console.error('Error al obtener logs:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Endpoint temporal para activar todos los productos
+app.post('/api/products/activate-all', async (req, res) => {
+  try {
+    console.log('🔧 Activando todos los productos...');
+    
+    // Obtener todos los productos (incluyendo desactivados)
+    const allProducts = await database.getAllProducts();
+    console.log(`📦 Total productos encontrados: ${allProducts.length}`);
+    
+    let activatedCount = 0;
+    
+    // Activar cada producto
+    for (const product of allProducts) {
+      if (!product.available) {
+        const result = await database.toggleProductAvailability(product.id);
+        if (result.success) {
+          activatedCount++;
+        }
+      }
+    }
+    
+    console.log(`✅ ${activatedCount} productos activados`);
+    res.json({ 
+      success: true, 
+      message: `${activatedCount} productos activados correctamente`,
+      totalProducts: allProducts.length,
+      activatedCount 
+    });
+  } catch (error) {
+    console.error('❌ Error activando productos:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
@@ -645,7 +675,7 @@ app.listen(PORT, () => {
 
 // Manejar cierre graceful
 process.on('SIGINT', async () => {
-  console.log('Cerrando servidor...');
-  await sqliteDatabase.close();
+  console.log('\n🔄 Cerrando servidor...');
+  await database.close();
   process.exit(0);
 });

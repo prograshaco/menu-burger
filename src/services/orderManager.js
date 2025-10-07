@@ -80,13 +80,24 @@ class OrderManager {
   }
 
   broadcastUpdate(type, data) {
-    if (!this.isClient || !this.broadcastChannel) return;
+    if (!this.isClient) return;
     
-    this.broadcastChannel.postMessage({
-      type,
-      data,
-      timestamp: Date.now()
+    console.log('📡 Broadcasting update:', { type, data: data?.id });
+    
+    // Emitir evento directo para la misma pestaña
+    const customEvent = new CustomEvent('orderUpdate', {
+      detail: { type, data, timestamp: Date.now() }
     });
+    window.dispatchEvent(customEvent);
+    
+    // También usar BroadcastChannel para otras pestañas
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage({
+        type,
+        data,
+        timestamp: Date.now()
+      });
+    }
 
     // También sincronizar con el servicio de sincronización global
     if (data && data.id) {
@@ -160,14 +171,24 @@ class OrderManager {
             customizations: item.customizations || {}
           })),
           total: order.total,
-          deliveryAddress: order.deliveryInfo?.address || currentUser.address,
-          phone: order.deliveryInfo?.phone || order.customerInfo?.phone || currentUser.phone,
-          notes: order.notes || currentUser.notes || '',
-          isTemporary: isTemporary,
-          // Agregar información específica del cliente para usuarios temporales
+          // Información del cliente
           customerName: order.customerInfo?.name || currentUser.name,
           customerEmail: order.customerInfo?.email || currentUser.email,
-          // Información de sesión temporal para seguimiento
+          phone: order.customerInfo?.phone || order.deliveryInfo?.phone || currentUser.phone,
+          deliveryAddress: order.deliveryInfo?.address || currentUser.address,
+          notes: order.notes || currentUser.notes || '',
+          notificationMethod: order.notificationMethod || 'email',
+          // Mantener también la estructura original para compatibilidad
+          customerInfo: {
+            name: order.customerInfo?.name || currentUser.name,
+            email: order.customerInfo?.email || currentUser.email,
+            phone: order.customerInfo?.phone || currentUser.phone
+          },
+          deliveryInfo: {
+            address: order.deliveryInfo?.address || currentUser.address,
+            phone: order.deliveryInfo?.phone || order.customerInfo?.phone || currentUser.phone
+          },
+          isTemporary: isTemporary,
           tempSessionId: isTemporary ? currentUser.id : null
         };
 
@@ -356,6 +377,7 @@ class OrderManager {
       }
 
       // Broadcast para refrescar otras pestañas
+      console.log('🔄 Emitiendo evento orderUpdated para pedido:', orderId);
       this.broadcastUpdate('orderUpdated', updatedOrder);
 
       return { success: true, order: updatedOrder };

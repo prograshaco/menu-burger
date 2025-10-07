@@ -1,122 +1,162 @@
-import React, { useState, useMemo, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import apiService from '../services/apiService'
-import MenuHeader from '../components/MenuHeader'
-import CategoryTabs from '../components/CategoryTabs'
-import SearchBar from '../components/SearchBar'
-import MenuGrid from '../components/MenuGrid'
-import Cart from '../components/Cart'
-import ProductModal from '../components/ProductModal'
-import Checkout from '../components/Checkout'
-import OrderConfirmation from '../components/OrderConfirmation'
+import React, { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
+import apiService from "../services/apiService";
+import MenuHeader from "../components/MenuHeader";
+import CategoryTabs from "../components/CategoryTabs";
+import SearchBar from "../components/SearchBar";
+import MenuGrid from "../components/MenuGrid";
+import Cart from "../components/Cart";
+import ProductModal from "../components/ProductModal";
+import Checkout from "../components/Checkout";
+import OrderConfirmation from "../components/OrderConfirmation";
 
 const MenuPage = () => {
-  const [activeCategory, setActiveCategory] = useState('burgers')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [cart, setCart] = useState([])
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [isCartOpen, setIsCartOpen] = useState(false)
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
-  const [completedOrder, setCompletedOrder] = useState(null)
-  const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState("burgers");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [cart, setCart] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const categories = [
-    { id: 'burgers', name: 'Burgers', icon: '🍔' },
-    { id: 'papas', name: 'Papas / Sides', icon: '🍟' },
-    { id: 'bebidas', name: 'Bebidas', icon: '🥤' },
-    { id: 'salsas', name: 'Salsas', icon: '🥄' },
-    { id: 'agregados', name: 'Agregados', icon: '🥬' }
-  ]
+    { id: "burgers", name: "Burgers", icon: "🍔" },
+    { id: "papas", name: "Papas / Sides", icon: "🍟" },
+    { id: "bebidas", name: "Bebidas", icon: "🥤" },
+    { id: "salsas", name: "Salsas", icon: "🥄" },
+    { id: "agregados", name: "Agregados", icon: "🥬" },
+  ];
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        setLoading(true)
-        const data = await apiService.getProducts()
-        setProducts(data)
+        setLoading(true);
+        setError(null);
+        console.log("🔍 Iniciando carga de productos...");
+        const data = await apiService.getProducts();
+        console.log("✅ Productos recibidos:", data);
+        console.log("📊 Cantidad de productos:", data?.length || 0);
+        setProducts(data || []);
       } catch (error) {
-        console.error('Error loading products:', error)
+        console.error("❌ Error loading products:", error);
+        setError(
+          "Error al cargar los productos. Verifica que el servidor esté funcionando."
+        );
+        setProducts([]); // Asegurar que products sea un array
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    loadProducts()
-  }, [])
+    loadProducts();
+  }, []);
 
   const filteredProducts = useMemo(() => {
-    // Filtrar productos por categoría activa y disponibilidad
-    let categoryProducts = products.filter(product => 
-      product.category === activeCategory && product.available !== false
-    )
-    
-    if (searchTerm) {
-      categoryProducts = categoryProducts.filter(product => 
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
+    console.log("🔍 Filtrando productos...");
+    console.log("📦 Total productos:", products?.length || 0);
+    console.log("🏷️ Categoría activa:", activeCategory);
+    console.log("🔍 Término de búsqueda:", searchTerm);
+
+    if (!Array.isArray(products)) {
+      console.warn("⚠️ Products no es un array:", products);
+      return [];
     }
-    
-    return categoryProducts
-  }, [products, activeCategory, searchTerm])
+
+    // Filtrar productos por categoría activa y disponibilidad
+    let categoryProducts = products.filter((product) => {
+      const matchesCategory = product.category === activeCategory;
+      const isAvailable = product.available !== false;
+      console.log(
+        `📋 Producto: ${product.name}, Categoría: ${
+          product.category
+        }, Disponible: ${product.available}, Coincide: ${
+          matchesCategory && isAvailable
+        }`
+      );
+      return matchesCategory && isAvailable;
+    });
+
+    console.log(
+      "📊 Productos después del filtro de categoría:",
+      categoryProducts.length
+    );
+
+    if (searchTerm) {
+      categoryProducts = categoryProducts.filter(
+        (product) =>
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (product.description &&
+            product.description
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()))
+      );
+      console.log(
+        "📊 Productos después del filtro de búsqueda:",
+        categoryProducts.length
+      );
+    }
+
+    console.log("✅ Productos finales filtrados:", categoryProducts);
+    return categoryProducts;
+  }, [products, activeCategory, searchTerm]);
 
   const addToCart = (product) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id)
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
-        return prevCart.map(item => 
-          item.id === product.id 
+        return prevCart.map((item) =>
+          item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
-        )
+        );
       }
-      return [...prevCart, { ...product, quantity: 1 }]
-    })
-  }
+      return [...prevCart, { ...product, quantity: 1 }];
+    });
+  };
 
   const removeFromCart = (productId) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId))
-  }
+    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  };
 
   const updateQuantity = (productId, newQuantity) => {
     if (newQuantity === 0) {
-      removeFromCart(productId)
-      return
+      removeFromCart(productId);
+      return;
     }
-    setCart(prevCart => 
-      prevCart.map(item => 
-        item.id === productId 
-          ? { ...item, quantity: newQuantity }
-          : item
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.id === productId ? { ...item, quantity: newQuantity } : item
       )
-    )
-  }
+    );
+  };
 
   const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
-  }
+    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  };
 
   const getTotalItems = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0)
-  }
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  };
 
   const handleCheckout = () => {
-    setIsCartOpen(false)
-    setIsCheckoutOpen(true)
-  }
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
 
   const handleOrderComplete = (orderData) => {
-    setIsCheckoutOpen(false)
-    setCompletedOrder(orderData)
-    setCart([]) // Limpiar carrito
-  }
+    setIsCheckoutOpen(false);
+    setCompletedOrder(orderData);
+    setCart([]); // Limpiar carrito
+  };
 
   const handleNewOrder = () => {
-    setCompletedOrder(null)
-    setActiveCategory('burgers')
-    setSearchTerm('')
-  }
+    setCompletedOrder(null);
+    setActiveCategory("burgers");
+    setSearchTerm("");
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -125,8 +165,8 @@ const MenuPage = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="text-burger-yellow hover:text-yellow-400 transition-colors mr-4"
                 title="Volver al inicio"
               >
@@ -138,7 +178,7 @@ const MenuPage = () => {
                 <p className="text-gray-400 text-sm">Hamburguesas Gourmet</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <Link
                 to="/admin"
@@ -148,7 +188,7 @@ const MenuPage = () => {
                 <span className="text-lg">⚙️</span>
                 <span className="hidden sm:inline">Admin</span>
               </Link>
-              
+
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="relative bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center space-x-2"
@@ -165,19 +205,16 @@ const MenuPage = () => {
           </div>
         </div>
       </header>
-      
+
       <div className="container mx-auto px-4 py-8">
-        <CategoryTabs 
+        <CategoryTabs
           categories={categories}
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
         />
-        
-        <SearchBar 
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-        />
-        
+
+        <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+
         {loading ? (
           <div className="flex justify-center items-center py-12">
             <div className="text-center">
@@ -185,17 +222,30 @@ const MenuPage = () => {
               <p className="text-gray-600">Cargando productos...</p>
             </div>
           </div>
+        ) : error ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-center">
+              <div className="text-4xl mb-4">❌</div>
+              <p className="text-red-400 mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-semibold"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
         ) : (
-          <MenuGrid 
+          <MenuGrid
             products={filteredProducts}
             onAddToCart={addToCart}
             onProductClick={setSelectedProduct}
           />
         )}
       </div>
-      
+
       {isCartOpen && (
-        <Cart 
+        <Cart
           cart={cart}
           onClose={() => setIsCartOpen(false)}
           onRemoveItem={removeFromCart}
@@ -204,33 +254,33 @@ const MenuPage = () => {
           onCheckout={handleCheckout}
         />
       )}
-      
+
       {isCheckoutOpen && (
-        <Checkout 
+        <Checkout
           cartItems={cart}
           total={getTotalPrice()}
           onClose={() => setIsCheckoutOpen(false)}
           onOrderComplete={handleOrderComplete}
         />
       )}
-      
+
       {completedOrder && (
-        <OrderConfirmation 
+        <OrderConfirmation
           order={completedOrder}
           onClose={() => setCompletedOrder(null)}
           onNewOrder={handleNewOrder}
         />
       )}
-      
+
       {selectedProduct && (
-        <ProductModal 
+        <ProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           onAddToCart={addToCart}
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default MenuPage
+export default MenuPage;

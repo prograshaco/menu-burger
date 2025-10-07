@@ -2,256 +2,131 @@
   "burgers": [
     {
       "id": 1,
-      "name": "Cheeseburger",
-      "price": 6990,
-      "desc": "Doble cheddar, pepinillos caseros, cebolla, ketchup y mostaza.",
-      "icon": "🍔",
-      "ingredients": ["doble cheddar", "pepinillos caseros", "cebolla", "ketchup", "mostaza"]
+      "name": "Burger Clásica",
+      "desc": "Hamburguesa clásica con carne, lechuga, tomate y cebolla",
+      "price": 1200,
+      "ingredients": ["Carne de res", "Lechuga", "Tomate", "Cebolla", "Pan brioche"],
+      "image": "/images/burger-clasica.jpg"
     },
     {
       "id": 2,
-      "name": "Classic Burger",
-      "price": 7990,
-      "desc": "Doble cheddar, lechuga, cebolla morada, tomate, pepinillos caseros y salsa BITE.",
-      "veggie": true,
-      "icon": "🌱",
-      "ingredients": ["doble cheddar", "lechuga", "cebolla morada", "tomate", "pepinillos caseros", "salsa BITE"]
+      "name": "Burger BBQ",
+      "desc": "Hamburguesa con salsa BBQ, bacon y queso cheddar",
+      "price": 1500,
+      "ingredients": ["Carne de res", "Bacon", "Queso cheddar", "Salsa BBQ", "Cebolla caramelizada"],
+      "image": "/images/burger-bbq.jpg"
     },
     {
       "id": 3,
-      "name": "Bacon Burger",
-      "price": 7990,
-      "desc": "Doble cheddar, mermelada de cebolla, tocino y salsa BBQ.",
-      "icon": "🥓",
-      "ingredients": ["doble cheddar", "mermelada de cebolla", "tocino", "salsa BBQ"]
-    },
-    {
-      "id": 4,
-      "name": "Jalisco Burger",
-      "price": 8490,
-      "desc": "Doble cheddar, jalapeños, tocino, cebolla caramelizada y mayonesa.",
-      "icon": "🌶️",
-      "ingredients": ["doble cheddar", "jalapeños", "tocino", "cebolla caramelizada", "mayonesa"]
-    },
-    {
-      "id": 5,
-      "name": "Orion Burger",
-      "price": 8490,
-      "desc": "Doble cheddar, salsa BBQ, cebolla crispy, tocino y salsa BITE.",
-      "icon": "🍔",
-      "ingredients": ["doble cheddar", "salsa BBQ", "cebolla crispy", "tocino", "salsa BITE"]
-    },
-    {
-      "id": 6,
-      "name": "Cazu Burger",
-      "price": 8990,
-      "desc": "Doble cheddar, doble queso amarillo, cebolla crispy, mermelada de pimiento y mayonesa.",
-      "veggie": true,
-      "icon": "🌱",
-      "ingredients": ["doble cheddar", "doble queso amarillo", "cebolla crispy", "mermelada de pimiento", "mayonesa"]
-    },
-    {
-      "id": 7,
-      "name": "RRO Burger",
-      "price": 11990,
-      "desc": "Doble burger, cuatro cheddar, jalapeños, mermelada de pimiento, pepinillos caseros y salsa BITE.",
-      "veggie": true,
-      "icon": "🌱",
-      "ingredients": ["doble burger", "cuatro cheddar", "jalapeños", "mermelada de pimiento", "pepinillos caseros", "salsa BITE"]
-    },
-    {
-      "id": 8,
-      "name": "Bass Burger",
-      "price": 8990,
-      "desc": "Doble cheddar, cebolla crispy, tocino, honey mustard, pepinillos y salsa BITE.",
-      "icon": "🍔",
-      "ingredients": ["doble cheddar", "cebolla crispy", "tocino", "honey mustard", "pepinillos", "salsa BITE"]
-    },
-    {
-      "id": 9,
-      "name": "Ruta 68",
-      "price": 9490,
-      "desc": "Doble cheddar, queso amarillo, mermelada de cebolla, champiñones salteados y mayonesa.",
-      "veggie": true,
-      "icon": "🌱",
-      "ingredients": ["doble cheddar", "queso amarillo", "mermelada de cebolla", "champiñones salteados", "mayonesa"]
-    },
-    {
-      "id": 10,
-      "name": "Lewis Burger",
-      "price": 7990,
-      "desc": "Hamburguesa de poroto negro, doble cheddar, lechuga, cebolla morada, tomate, champiñones salteados, pepinillos caseros y salsa BITE.",
-      "veggie": true,
-      "icon": "🌱",
-      "ingredients": ["hamburguesa de poroto negro", "doble cheddar", "lechuga", "cebolla morada", "tomate", "champiñones salteados", "pepinillos caseros", "salsa BITE"]
+      "name": "Burger Deluxe",
+      "desc": "Hamburguesa gourmet con doble carne y ingredientes premium",
+      "price": 1800,
+      "ingredients": ["Doble carne de res", "Queso suizo", "Rúcula", "Tomate cherry", "Mayonesa de ajo"],
+      "image": "/images/burger-deluxe.jpg"
     }
   ],
   "papas": [
     {
-      "id": 11,
-      "name": "Oogie",
-      "price": 3500,
-      "desc": "Papas fritas caseras 300grs.",
-      "icon": "🍟",
-      "ingredients": ["papas fritas caseras"]
+      "id": 4,
+      "name": "Papas Fritas Clásicas",
+      "desc": "Papas fritas doradas y crujientes",
+      "price": 600,
+      "ingredients": ["Papas", "Sal"],
+      "image": "/images/papas-clasicas.jpg"
     },
     {
-      "id": 12,
-      "name": "Boogie",
-      "price": 6490,
-      "desc": "Papas fritas y salsa cheddar casera.",
-      "icon": "🍟",
-      "ingredients": ["papas fritas", "salsa cheddar casera"]
+      "id": 5,
+      "name": "Papas con Cheddar",
+      "desc": "Papas fritas con queso cheddar derretido",
+      "price": 800,
+      "ingredients": ["Papas", "Queso cheddar", "Cebollín"],
+      "image": "/images/papas-cheddar.jpg"
     },
     {
-      "id": 13,
-      "name": "Texas",
-      "price": 7990,
-      "desc": "Papas fritas, salsa cheddar casera, tocino y jalapeños.",
-      "icon": "🌶️",
-      "ingredients": ["papas fritas", "salsa cheddar casera", "tocino", "jalapeños"]
-    },
-    {
-      "id": 14,
-      "name": "Pío Nono",
-      "price": 10990,
-      "desc": "Papas fritas, salsa cheddar casera, pepinillos, cebolla blanca, carne molida y salsa BITE.",
-      "icon": "🍟",
-      "ingredients": ["papas fritas", "salsa cheddar casera", "pepinillos", "cebolla blanca", "carne molida", "salsa BITE"]
-    },
-    {
-      "id": 15,
-      "name": "Eddie",
-      "price": 10990,
-      "desc": "Papas fritas, salsa cheddar casera, tomate, ciboulette, salsa ácida y carne molida.",
-      "icon": "🍟",
-      "ingredients": ["papas fritas", "salsa cheddar casera", "tomate", "ciboulette", "salsa ácida", "carne molida"]
-    },
-    {
-      "id": 16,
-      "name": "Lovat",
-      "price": 10990,
-      "desc": "Papas fritas, salsa cheddar casera, jalapeños, cebolla morada y carne molida.",
-      "icon": "🌶️",
-      "ingredients": ["papas fritas", "salsa cheddar casera", "jalapeños", "cebolla morada", "carne molida"]
-    },
-    {
-      "id": 17,
-      "name": "Re-Hash",
-      "price": 8990,
-      "desc": "Papas fritas, salsa cheddar casera, tocino, cebolla crispy y salsa BBQ.",
-      "icon": "🥓",
-      "ingredients": ["papas fritas", "salsa cheddar casera", "tocino", "cebolla crispy", "salsa BBQ"]
+      "id": 6,
+      "name": "Aros de Cebolla",
+      "desc": "Aros de cebolla empanizados y fritos",
+      "price": 700,
+      "ingredients": ["Cebolla", "Harina", "Pan rallado"],
+      "image": "/images/aros-cebolla.jpg"
     }
   ],
   "bebidas": [
     {
-      "id": 18,
-      "name": "Individual",
-      "price": 1600,
-      "desc": "Bebida individual.",
-      "icon": "🥤",
-      "ingredients": ["bebida"]
+      "id": 7,
+      "name": "Coca Cola",
+      "desc": "Refresco de cola 500ml",
+      "price": 300,
+      "ingredients": ["Agua carbonatada", "Jarabe de cola"],
+      "image": "/images/coca-cola.jpg"
     },
     {
-      "id": 19,
-      "name": "Familiar",
-      "price": 3500,
-      "desc": "Bebida familiar.",
-      "icon": "🥤",
-      "ingredients": ["bebida"]
+      "id": 8,
+      "name": "Agua Mineral",
+      "desc": "Agua mineral natural 500ml",
+      "price": 200,
+      "ingredients": ["Agua mineral"],
+      "image": "/images/agua-mineral.jpg"
+    },
+    {
+      "id": 9,
+      "name": "Jugo de Naranja",
+      "desc": "Jugo natural de naranja 400ml",
+      "price": 400,
+      "ingredients": ["Jugo de naranja natural"],
+      "image": "/images/jugo-naranja.jpg"
     }
   ],
   "salsas": [
     {
-      "id": 20,
-      "name": "Mayonesa",
-      "price": 1000,
-      "desc": "Salsa mayonesa.",
-      "icon": "🥄",
-      "ingredients": ["mayonesa"]
+      "id": 10,
+      "name": "Salsa Ketchup",
+      "desc": "Salsa de tomate clásica",
+      "price": 100,
+      "ingredients": ["Tomate", "Vinagre", "Azúcar"],
+      "image": "/images/ketchup.jpg"
     },
     {
-      "id": 21,
-      "name": "Ketchup",
-      "price": 1000,
-      "desc": "Salsa ketchup.",
-      "icon": "🥄",
-      "ingredients": ["ketchup"]
+      "id": 11,
+      "name": "Salsa Mostaza",
+      "desc": "Mostaza amarilla suave",
+      "price": 100,
+      "ingredients": ["Semillas de mostaza", "Vinagre"],
+      "image": "/images/mostaza.jpg"
     },
     {
-      "id": 22,
-      "name": "Mostaza",
-      "price": 1000,
-      "desc": "Salsa mostaza.",
-      "icon": "🥄",
-      "ingredients": ["mostaza"]
-    },
-    {
-      "id": 23,
-      "name": "Salsa picante",
-      "price": 1000,
-      "desc": "Salsa picante.",
-      "icon": "🌶️",
-      "ingredients": ["salsa picante"]
-    },
-    {
-      "id": 24,
-      "name": "BBQ",
-      "price": 1000,
-      "desc": "Salsa BBQ.",
-      "icon": "🥄",
-      "ingredients": ["salsa BBQ"]
-    },
-    {
-      "id": 25,
-      "name": "Salsa BITE",
-      "price": 1500,
-      "desc": "Salsa especial BITE.",
-      "icon": "🥄",
-      "ingredients": ["salsa BITE"]
-    },
-    {
-      "id": 26,
-      "name": "Salsa ácida",
-      "price": 1500,
-      "desc": "Salsa ácida.",
-      "icon": "🥄",
-      "ingredients": ["salsa ácida"]
-    },
-    {
-      "id": 27,
-      "name": "Honey Mustard",
-      "price": 1500,
-      "desc": "Salsa honey mustard.",
-      "icon": "🍯",
-      "ingredients": ["honey mustard"]
-    },
-    {
-      "id": 28,
-      "name": "Salsa Cheddar",
-      "price": 2000,
-      "desc": "Salsa cheddar.",
-      "icon": "🧀",
-      "ingredients": ["salsa cheddar"]
+      "id": 12,
+      "name": "Salsa BBQ",
+      "desc": "Salsa barbacoa ahumada",
+      "price": 150,
+      "ingredients": ["Tomate", "Melaza", "Especias"],
+      "image": "/images/salsa-bbq.jpg"
     }
   ],
   "agregados": [
     {
-      "id": 29,
-      "name": "Vegetales básicos",
-      "price": 1000,
-      "desc": "Tomate, cebolla, cebolla morada, ciboulette, jalapeño, pepinillos",
-      "icon": "🥬",
-      "ingredients": ["tomate", "cebolla", "cebolla morada", "ciboulette", "jalapeño", "pepinillos"]
+      "id": 13,
+      "name": "Queso Extra",
+      "desc": "Porción adicional de queso cheddar",
+      "price": 200,
+      "ingredients": ["Queso cheddar"],
+      "image": "/images/queso-extra.jpg"
     },
     {
-      "id": 30,
-      "name": "Agregados premium",
-      "price": 2000,
-      "desc": "Cebolla crispy, carne molida, tocino, cebolla caramelizada, mermelada de cebolla, mermelada de pimiento, champiñones salteados",
-      "icon": "🥓",
-      "ingredients": ["cebolla crispy", "carne molida", "tocino", "cebolla caramelizada", "mermelada de cebolla", "mermelada de pimiento", "champiñones salteados"]
+      "id": 14,
+      "name": "Bacon Extra",
+      "desc": "Tiras adicionales de bacon crujiente",
+      "price": 300,
+      "ingredients": ["Bacon"],
+      "image": "/images/bacon-extra.jpg"
+    },
+    {
+      "id": 15,
+      "name": "Palta",
+      "desc": "Rebanadas de palta fresca",
+      "price": 250,
+      "ingredients": ["Palta"],
+      "image": "/images/palta.jpg"
     }
   ]
 }

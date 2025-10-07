@@ -24,6 +24,7 @@ const MenuApp = () => {
   const [error, setError] = useState(null);
 
   const categories = [
+    { id: 'all', name: 'Todos', icon: '👀'},
     { id: 'burgers', name: 'Burgers', icon: '🍔' },
     { id: 'papas', name: 'Papas / Sides', icon: '🍟' },
     { id: 'bebidas', name: 'Bebidas', icon: '🥤' },
