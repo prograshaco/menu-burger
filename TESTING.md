@@ -42,65 +42,100 @@ tests/
 
 ## ✅ Test Básico Funcionando
 
-El test básico (`tests/example.test.js`) está funcionando correctamente:
+El test básico (`tests/example.test.js`) incluye 5 tests funcionando correctamente:
 
 ```javascript
-describe('Ejemplo de Tests Básicos', function() {
-  it('debería sumar dos números correctamente', function() {
+describe("Ejemplo de Tests Básicos", function () {
+  it("debería sumar dos números correctamente", function () {
     const resultado = 2 + 3;
     expect(resultado).toBe(5);
   });
-  
-  // ... más tests
+
+  it("debería verificar que un string contiene texto", function () {
+    const texto = "Menu Burger App";
+    expect(texto).toContain("Burger");
+  });
+
+  it("debería verificar que un array contiene elementos", function () {
+    const categorias = ["burgers", "papas", "bebidas"];
+    expect(categorias).toContain("burgers");
+    expect(categorias.length).toBe(3);
+  });
+
+  it("debería verificar objetos", function () {
+    const producto = {
+      id: 1,
+      name: "Hamburguesa Clásica",
+      price: 12.99,
+      category: "burgers",
+    };
+
+    expect(producto.name).toBe("Hamburguesa Clásica");
+    expect(producto.price).toBeGreaterThan(10);
+  });
+
+  it("debería verificar valores booleanos", function () {
+    const isAvailable = true;
+    const isOutOfStock = false;
+
+    expect(isAvailable).toBe(true);
+    expect(isOutOfStock).toBe(false);
+    expect(isAvailable).toBeTruthy();
+    expect(isOutOfStock).toBeFalsy();
+  });
 });
 ```
 
 **Resultado:**
+
 ```
-Chrome Headless: Executed 3 of 3 SUCCESS (0.001 secs / 0.001 secs)
-TOTAL: 3 SUCCESS
+Chrome Headless: Executed 5 of 5 SUCCESS (0.002 secs / 0.001 secs)
+TOTAL: 5 SUCCESS
 ```
 
 ## 📝 Cómo Escribir Tests
 
 ### Estructura Básica
+
 ```javascript
-describe('Nombre del Componente/Función', function() {
-  it('debería hacer algo específico', function() {
+describe("Nombre del Componente/Función", function () {
+  it("debería hacer algo específico", function () {
     // Arrange (preparar)
-    const input = 'valor de prueba';
-    
+    const input = "valor de prueba";
+
     // Act (ejecutar)
     const result = miFuncion(input);
-    
+
     // Assert (verificar)
-    expect(result).toBe('resultado esperado');
+    expect(result).toBe("resultado esperado");
   });
 });
 ```
 
 ### Matchers Más Usados
+
 ```javascript
-expect(value).toBe(expected);           // Igualdad estricta
-expect(value).toEqual(expected);        // Igualdad profunda
-expect(value).toContain(item);          // Contiene elemento
-expect(value).toBeGreaterThan(5);       // Mayor que
-expect(value).toBeLessThan(10);         // Menor que
-expect(array).toHaveLength(3);          // Longitud del array
-expect(obj).toHaveProperty('prop');     // Tiene propiedad
-expect(fn).toThrow();                   // Lanza excepción
+expect(value).toBe(expected); // Igualdad estricta
+expect(value).toEqual(expected); // Igualdad profunda
+expect(value).toContain(item); // Contiene elemento
+expect(value).toBeGreaterThan(5); // Mayor que
+expect(value).toBeLessThan(10); // Menor que
+expect(array).toHaveLength(3); // Longitud del array
+expect(obj).toHaveProperty("prop"); // Tiene propiedad
+expect(fn).toThrow(); // Lanza excepción
 ```
 
 ### Ejemplo de Test para Función
+
 ```javascript
-describe('Función formatPrice', function() {
+describe("Función formatPrice", function () {
   function formatPrice(price) {
     return `$${price.toFixed(2)}`;
   }
 
-  it('debería formatear precios correctamente', function() {
-    expect(formatPrice(12.99)).toBe('$12.99');
-    expect(formatPrice(10)).toBe('$10.00');
+  it("debería formatear precios correctamente", function () {
+    expect(formatPrice(12.99)).toBe("$12.99");
+    expect(formatPrice(10)).toBe("$10.00");
   });
 });
 ```
@@ -108,12 +143,14 @@ describe('Función formatPrice', function() {
 ## 🔧 Configuración Técnica
 
 ### Archivos de Configuración
+
 - `karma.simple.conf.cjs` - Configuración básica de Karma (funcionando)
 - `karma.conf.cjs` - Configuración completa con Webpack (para desarrollo futuro)
 - `.babelrc` - Configuración de Babel para transpilación
 - `jasmine.json` - Configuración de Jasmine
 
 ### Dependencias Instaladas
+
 ```json
 {
   "devDependencies": {

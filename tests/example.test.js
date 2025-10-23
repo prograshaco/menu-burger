@@ -17,4 +17,26 @@ describe('Ejemplo de Tests Básicos', function() {
     expect(categorias.length).toBe(3);
   });
 
+  it('debería verificar objetos', function() {
+    const producto = {
+      id: 1,
+      name: 'Hamburguesa Clásica',
+      price: 12.99,
+      category: 'burgers'
+    };
+    
+    expect(producto.name).toBe('Hamburguesa Clásica');
+    expect(producto.price).toBeGreaterThan(10);
+  });
+
+  it('debería verificar valores booleanos', function() {
+    const isAvailable = true;
+    const isOutOfStock = false;
+    
+    expect(isAvailable).toBe(true);
+    expect(isOutOfStock).toBe(false);
+    expect(isAvailable).toBeTruthy();
+    expect(isOutOfStock).toBeFalsy();
+  });
+
 });
