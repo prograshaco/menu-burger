@@ -98,76 +98,78 @@ const ImageCarousel = () => {
 
         {/* Carousel Container */}
         <div 
-          className="relative bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl border border-white/20"
+          className="relative bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl border border-white/20 
+        + max-w-screen-xl mx-auto overflow-hidden"
           onMouseEnter={() => setIsAutoPlaying(false)}
           onMouseLeave={() => setIsAutoPlaying(true)}
         >
           {/* Main Carousel */}
-          <div className="relative overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl">
-            <div 
+          <div
+            className="relative overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl
+            max-h-[380px] sm:max-h-[420px] md:max-h-[500px] lg:max-h-[560px] xl:max-h-[620px]"
+            style={{ minHeight: "300px" }}
+          >
+            <div
               className="flex transition-transform duration-700 ease-in-out"
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
-              {specialties.map((specialty, index) => (
+              {specialties.map((specialty) => (
                 <div key={specialty.id} className="w-full flex-shrink-0">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center p-4 sm:p-6 lg:p-8">
-                    {/* Image Side */}
-                    <div className="relative order-1 lg:order-none">
-                      <div className="text-center">
-                        <div className="text-6xl sm:text-7xl lg:text-9xl mb-4 sm:mb-6 transform hover:scale-110 transition-transform duration-300">
-                          {specialty.image}
-                        </div>
-                        <div className="absolute inset-0 bg-gradient-to-r from-orange-400/20 to-red-400/20 rounded-full blur-3xl"></div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-center p-3 sm:p-5 md:p-6">
+                    
+                    {/* Imagen */}
+                    <div className="relative order-1 lg:order-none flex justify-center items-center">
+                      <div className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl mb-3 sm:mb-5 transform hover:scale-105 transition-transform duration-300">
+                        {specialty.image}
                       </div>
-                      
-                      {/* Floating Elements */}
-                      <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                      <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
                         {specialty.popular && (
-                          <span className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold animate-pulse">
+                          <span className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold animate-pulse">
                             🔥 Popular
                           </span>
                         )}
                       </div>
-                      
-                      <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4">
-                        <span className="bg-green-500 text-white px-2 py-1 sm:px-4 sm:py-2 rounded-full text-sm sm:text-lg font-bold">
+                      <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3">
+                        <span className="bg-green-500 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold">
                           {specialty.price}
                         </span>
                       </div>
                     </div>
 
-                    {/* Content Side */}
-                    <div className="text-white space-y-4 sm:space-y-6 order-2 lg:order-none">
-                      <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent text-center lg:text-left">
+                    {/* Contenido */}
+                    <div className="text-white space-y-2 sm:space-y-3 md:space-y-4 order-2 lg:order-none text-center lg:text-left">
+                      <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
                         {specialty.name}
                       </h3>
-                      
-                      <p className="text-sm sm:text-base lg:text-xl text-gray-300 leading-relaxed text-center lg:text-left">
+
+                      <p className="text-xs sm:text-sm md:text-base text-gray-300 leading-snug max-w-md mx-auto lg:mx-0">
                         {specialty.description}
                       </p>
-                      
-                      {/* Ingredients */}
+
+                      {/* Ingredientes */}
                       <div>
-                        <h4 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-orange-400 text-center lg:text-left">Ingredientes:</h4>
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center lg:justify-start">
+                        <h4 className="text-sm sm:text-base font-semibold mb-1 sm:mb-2 text-orange-400">
+                          Ingredientes:
+                        </h4>
+                        <div className="flex flex-wrap gap-1 justify-center lg:justify-start">
                           {specialty.ingredients.map((ingredient, idx) => (
-                            <span 
+                            <span
                               key={idx}
-                              className="bg-white/20 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm border border-white/30"
+                              className="bg-white/20 backdrop-blur-sm px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs border border-white/30"
                             >
                               {ingredient}
                             </span>
                           ))}
                         </div>
                       </div>
-                      
-                      {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 pt-2 sm:pt-4">
-                        <button className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-4 py-2 sm:px-6 lg:px-8 sm:py-3 rounded-lg sm:rounded-xl font-bold hover:from-orange-700 hover:to-red-700 transform hover:scale-105 transition-all duration-300 shadow-lg text-sm sm:text-base">
-                          🛒 Ordenar Ahora
+
+                      {/* Botones */}
+                      <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-2 pt-2">
+                        <button className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-lg font-bold text-xs sm:text-sm hover:from-orange-700 hover:to-red-700 transform hover:scale-105 transition-all duration-300 shadow-md">
+                          🛒 Ordenar
                         </button>
-                        <button className="border-2 border-white/30 text-white px-4 py-2 sm:px-6 lg:px-8 sm:py-3 rounded-lg sm:rounded-xl font-bold hover:bg-white/10 transition-all duration-300 text-sm sm:text-base">
-                          📋 Ver Detalles
+                        <button className="border border-white/30 text-white px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-lg font-bold text-xs sm:text-sm hover:bg-white/10 transition-all duration-300">
+                          📋 Ver
                         </button>
                       </div>
                     </div>
