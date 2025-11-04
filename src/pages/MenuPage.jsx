@@ -11,7 +11,7 @@ import Checkout from "../components/Checkout";
 import OrderConfirmation from "../components/OrderConfirmation";
 
 const MenuPage = () => {
-  const [activeCategory, setActiveCategory] = useState("burgers");
+  const [activeCategory, setActiveCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -23,6 +23,7 @@ const MenuPage = () => {
   const [error, setError] = useState(null);
 
   const categories = [
+    { id: "all", name: "Todos", icon: "👀" },
     { id: "burgers", name: "Burgers", icon: "🍔" },
     { id: "papas", name: "Papas / Sides", icon: "🍟" },
     { id: "bebidas", name: "Bebidas", icon: "🥤" },
@@ -67,7 +68,8 @@ const MenuPage = () => {
 
     // Filtrar productos por categoría activa y disponibilidad
     let categoryProducts = products.filter((product) => {
-      const matchesCategory = product.category === activeCategory;
+      const matchesCategory =
+      activeCategory === "all" || product.category === activeCategory;
       const isAvailable = product.available !== false;
       console.log(
         `📋 Producto: ${product.name}, Categoría: ${
