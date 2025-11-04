@@ -388,6 +388,18 @@ app.patch('/api/products/:id/toggle', async (req, res) => {
   }
 });
 
+// Ruta para obtener especialidades (productos destacados)
+app.get('/api/specialties', async (req, res) => {
+  try {
+    const specialties = await database.getSpecialties();
+    res.json(specialties);
+  } catch (error) {
+    console.error('❌ Error obteniendo especialidades:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+
 // Rutas de pedidos
 app.post('/api/orders', async (req, res) => {
   try {
