@@ -119,6 +119,20 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
     return `$${n.toLocaleString()}`;
   };
 
+  // === Helper para mostrar fechas seguras ===
+  const getReviewDate = (r) => {
+    const raw =
+      r?.createdAt ||
+      r?.created_at ||
+      r?.date ||
+      r?.moderatedAt ||
+      r?.timestamp;
+
+    if (!raw) return 'N/A';
+    const d = new Date(raw);
+    return isNaN(d) ? 'N/A' : d.toLocaleDateString();
+  };
+
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
@@ -1137,7 +1151,7 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
                                   </span>
                                 </td>
                                 <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                  {review?.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'N/A'}
+                                  {getReviewDate(review)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                   {!review?.approved && (
