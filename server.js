@@ -29,6 +29,12 @@ try {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import fs from 'fs';
+
+// Crear carpeta uploads/images si no existe
+const uploadsDir = path.join(__dirname, 'uploads/images');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
 const app = express();
 const PORT = 3006;
 
@@ -248,6 +254,23 @@ app.patch('/api/users/:id/toggle', async (req, res) => {
 });
 
 // Rutas de productos
+
+// NUEVO ENDPOINT: Subida de imagen
+app.post('/api/upload/image', upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió ningún archivo' });
+    }
+
+    const imageUrl = `/uploads/images/${req.file.filename}`;
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error('Error al subir imagen:', error);
+    res.status(500).json({ error: 'Error interno al subir la imagen' });
+  }
+});
+
+
 app.get('/api/products/all', async (req, res) => {
   try {
     const products = await database.getAllProducts();
@@ -323,22 +346,32 @@ app.post('/api/products', async (req, res) => {
 app.put('/api/products/:id', async (req, res) => {
   try {
     const productId = req.params.id;
+
+    // Extraemos datos del body
+    const { name, description, price, category, image, available } = req.body;
+
+    // Creamos objeto de actualización
     const updates = {
-      name: req.body.name,
-      description: req.body.description,
-      price: parseFloat(req.body.price),
-      category: req.body.category,
-      image_url: req.body.image_url,
-      available: req.body.available
+      name,
+      description,
+      price: parseFloat(price),
+      category,
+      available: available !== undefined ? available : true,
     };
-    
+
+    // 👇 Mapeo: si viene image, la pasamos como image_url
+    if (typeof image === 'string' && image.trim() !== '') {
+      updates.image_url = image;
+    }
+
     const updatedProduct = await database.updateProduct(productId, updates);
     res.json(updatedProduct);
   } catch (error) {
-    console.error('Error actualizando producto:', error);
+    console.error('❌ Error actualizando producto:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
 
 app.delete('/api/products/:id', async (req, res) => {
   try {
