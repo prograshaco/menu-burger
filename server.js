@@ -29,6 +29,12 @@ try {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import fs from 'fs';
+
+// Crear carpeta uploads/images si no existe
+const uploadsDir = path.join(__dirname, 'uploads/images');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
 const app = express();
 const PORT = 3006;
 
@@ -247,10 +253,24 @@ app.patch('/api/users/:id/toggle', async (req, res) => {
   }
 });
 
-// Proxy para la API externa de productos
-const EXTERNAL_PRODUCTS_API = 'https://api-burger.onrender.com/api/products';
+// Rutas de productos
 
-// Rutas de productos - proxy a API externa
+// NUEVO ENDPOINT: Subida de imagen
+app.post('/api/upload/image', upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió ningún archivo' });
+    }
+
+    const imageUrl = `/uploads/images/${req.file.filename}`;
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error('Error al subir imagen:', error);
+    res.status(500).json({ error: 'Error interno al subir la imagen' });
+  }
+});
+
+
 app.get('/api/products/all', async (req, res) => {
   try {
     console.log('🔄 Proxy: Obteniendo todos los productos de API externa...');
@@ -391,6 +411,7 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
+
 app.delete('/api/products/:id', async (req, res) => {
   try {
     console.log(`🔄 Proxy: Eliminando producto ${req.params.id} en API externa...`);
@@ -444,6 +465,18 @@ app.patch('/api/products/:id/toggle', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
+// Ruta para obtener especialidades (productos destacados)
+app.get('/api/specialties', async (req, res) => {
+  try {
+    const specialties = await database.getSpecialties();
+    res.json(specialties);
+  } catch (error) {
+    console.error('❌ Error obteniendo especialidades:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 
 // Rutas de pedidos
 app.post('/api/orders', async (req, res) => {

@@ -83,6 +83,18 @@ class TursoDatabaseService {
         )
       `);
 
+      // Agregar columna 'active' si no existe (para bases de datos existentes)
+      try {
+        await this.client.execute(
+          `ALTER TABLE products ADD COLUMN is_specialty BOOLEAN DEFAULT 1`
+        );
+      } catch (error) {
+        // La columna ya existe, ignorar el error
+        if (!error.message.includes("duplicate column name")) {
+          console.warn("Error al agregar columna is_specialty:", error.message);
+        }
+      }
+
       // Tabla de órdenes
       await this.client.execute(`
         CREATE TABLE IF NOT EXISTS orders (
@@ -558,6 +570,25 @@ class TursoDatabaseService {
       throw error;
     }
   }
+
+  async getSpecialties() {
+    try {
+      console.log("🔍 Obteniendo especialidades desde Turso...");
+      
+      const result = await this.client.execute(
+        `SELECT * FROM products 
+         WHERE available = 1 AND is_specialty = 1 
+         ORDER BY name`
+      );
+      
+      console.log(`✅ ${result.rows.length} especialidades obtenidas desde Turso`);
+      return result.rows;
+    } catch (error) {
+      console.error("❌ Error obteniendo especialidades desde Turso:", error);
+      throw error;
+    }
+  }
+
 
   async getAllProducts() {
     try {

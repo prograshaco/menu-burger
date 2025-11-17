@@ -4,53 +4,21 @@ const ImageCarousel = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
 
-  const specialties = [
-    {
-      id: 1,
-      name: "Burger Clásica",
-      description: "Nuestra hamburguesa tradicional con carne 100% angus, lechuga fresca, tomate, cebolla y nuestra salsa especial",
-      image: "🍔",
-      price: "$12.99",
-      ingredients: ["Carne Angus", "Lechuga", "Tomate", "Cebolla", "Salsa Especial"],
-      popular: true
-    },
-    {
-      id: 2,
-      name: "BBQ Deluxe",
-      description: "Hamburguesa premium con carne ahumada, bacon crujiente, cebolla caramelizada y salsa BBQ artesanal",
-      image: "🥓",
-      price: "$15.99",
-      ingredients: ["Carne Ahumada", "Bacon", "Cebolla Caramelizada", "Salsa BBQ"],
-      popular: false
-    },
-    {
-      id: 3,
-      name: "Veggie Supreme",
-      description: "Deliciosa opción vegetariana con hamburguesa de quinoa, aguacate, brotes frescos y mayonesa vegana",
-      image: "🥬",
-      price: "$11.99",
-      ingredients: ["Hamburguesa Quinoa", "Aguacate", "Brotes", "Mayo Vegana"],
-      popular: false
-    },
-    {
-      id: 4,
-      name: "Spicy Jalapeño",
-      description: "Para los amantes del picante: carne especiada, jalapeños, queso pepper jack y salsa chipotle",
-      image: "🌶️",
-      price: "$14.99",
-      ingredients: ["Carne Especiada", "Jalapeños", "Queso Pepper Jack", "Salsa Chipotle"],
-      popular: true
-    },
-    {
-      id: 5,
-      name: "Truffle Gourmet",
-      description: "Experiencia gourmet con carne wagyu, trufa negra, rúcula y queso brie en pan brioche artesanal",
-      image: "🍄",
-      price: "$22.99",
-      ingredients: ["Carne Wagyu", "Trufa Negra", "Rúcula", "Queso Brie"],
-      popular: false
+  const [specialties, setSpecialties] = useState([])
+
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      try {
+        const response = await fetch("http://localhost:3006/api/specialties")
+        const data = await response.json()
+        setSpecialties(data)
+      } catch (error) {
+        console.error("Error al cargar especialidades:", error)
+      }
     }
-  ]
+    fetchSpecialties()
+  }, [])
+
 
   useEffect(() => {
     if (isAutoPlaying) {
@@ -119,21 +87,27 @@ const ImageCarousel = () => {
                     
                     {/* Imagen */}
                     <div className="relative order-1 lg:order-none flex justify-center items-center">
-                      <div className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl mb-3 sm:mb-5 transform hover:scale-105 transition-transform duration-300">
-                        {specialty.image}
+                      <img
+                        src={specialty.image_url || "/uploads/images/placeholder-thumb.png"}
+                        alt={specialty.name}
+                        className="w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 object-contain rounded-2xl shadow-2xl bg-black/20 p-2 transform hover:scale-105 transition-transform duration-300"
+                      />
+
+                      {/* Precio flotante */}
+                      <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3">
+                        <span className="bg-green-500 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold">
+                          ${parseFloat(specialty.price).toFixed(2)}
+                        </span>
                       </div>
-                      <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                        {specialty.popular && (
+
+                      {/* Etiqueta "Popular" opcional */}
+                      {specialty.popular && (
+                        <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
                           <span className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold animate-pulse">
                             🔥 Popular
                           </span>
-                        )}
-                      </div>
-                      <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3">
-                        <span className="bg-green-500 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold">
-                          {specialty.price}
-                        </span>
-                      </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Contenido */}
@@ -143,24 +117,21 @@ const ImageCarousel = () => {
                       </h3>
 
                       <p className="text-xs sm:text-sm md:text-base text-gray-300 leading-snug max-w-md mx-auto lg:mx-0">
-                        {specialty.description}
+                        <span className="font-semibold text-orange-400">Categoría:</span>{" "}
+                        {specialty.category || "No especificada"}
                       </p>
 
-                      {/* Ingredientes */}
+
+                      {/* Descripción */}
                       <div>
                         <h4 className="text-sm sm:text-base font-semibold mb-1 sm:mb-2 text-orange-400">
-                          Ingredientes:
+                          Descripción:
                         </h4>
-                        <div className="flex flex-wrap gap-1 justify-center lg:justify-start">
-                          {specialty.ingredients.map((ingredient, idx) => (
-                            <span
-                              key={idx}
-                              className="bg-white/20 backdrop-blur-sm px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs border border-white/30"
-                            >
-                              {ingredient}
-                            </span>
-                          ))}
-                        </div>
+                        <p className="text-xs sm:text-sm md:text-base text-gray-400 leading-snug max-w-md mx-auto lg:mx-0 italic">
+                          {specialty.description && specialty.description.trim() !== ""
+                            ? specialty.description
+                            : "Descripción no disponible"}
+                        </p>
                       </div>
 
                       {/* Botones */}
@@ -229,9 +200,13 @@ const ImageCarousel = () => {
                   : 'border-white/20 bg-white/5 hover:bg-white/10'
               }`}
             >
-              <div className="text-2xl sm:text-3xl lg:text-4xl mb-1 sm:mb-2">{specialty.image}</div>
-              <div className="text-white text-xs sm:text-sm font-medium hidden sm:block">{specialty.name}</div>
-              <div className="text-orange-400 text-xs hidden sm:block">{specialty.price}</div>
+              <img
+                src={specialty.image_url || "/uploads/images/placeholder-thumb.png"}
+                alt={specialty.name}
+                className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-md mx-auto mb-1"
+              />
+              <div className="text-white text-xs sm:text-sm font-medium text-center truncate">{specialty.name}</div>
+              <div className="text-orange-400 text-xs text-center">${parseFloat(specialty.price).toFixed(2)}</div>
             </button>
           ))}
         </div>
