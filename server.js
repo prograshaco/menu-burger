@@ -3,6 +3,10 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import fetch from 'node-fetch';
+
+
+
 
 // Importar base de datos (Turso o SQLite como fallback)
 let database;
@@ -252,6 +256,9 @@ app.patch('/api/users/:id/toggle', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
+// Proxy para la API externa de productos
+const EXTERNAL_PRODUCTS_API = 'https://api-burger.onrender.com/api/products';
 
 // Rutas de productos
 
