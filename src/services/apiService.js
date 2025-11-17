@@ -1,4 +1,4 @@
-// Servicio API para comunicarse con el backend SQLite
+// Servicio API para comunicarse con el backend local (que hace proxy a la API externa de productos)
 const API_BASE_URL = 'http://localhost:3006/api';
 
 class ApiService {
@@ -34,6 +34,12 @@ class ApiService {
       console.error(`Error en API request a ${endpoint}:`, error);
       throw error;
     }
+  }
+
+  // Método específico para productos (usa el proxy del servidor local)
+  async requestProducts(endpoint, options = {}) {
+    // Usar el servidor local que hace proxy a la API externa
+    return this.request(`/products${endpoint}`, options);
   }
 
   // Métodos de autenticación
@@ -87,57 +93,82 @@ class ApiService {
     });
   }
 
-  // Métodos de productos
+  // Métodos de productos - usando proxy del servidor local
   async getProducts() {
-    return this.request('/products');
+    const products = await this.requestProducts('');
+    // Normalizar imageUrl a image
+    return Array.isArray(products) ? products.map(p => ({
+      ...p,
+      image: p.imageUrl || p.image
+    })) : products;
   }
 
   async getAllProducts() {
-    return this.request('/products/all');
+    const products = await this.requestProducts('/all');
+    // Normalizar imageUrl a image
+    return Array.isArray(products) ? products.map(p => ({
+      ...p,
+      image: p.imageUrl || p.image
+    })) : products;
   }
 
   async getProductById(id) {
-    return this.request(`/products/${id}`);
+    const product = await this.requestProducts(`/${id}`);
+    // Normalizar imageUrl a image
+    return product.imageUrl ? { ...product, image: product.imageUrl || product.image } : product;
   }
 
   async getProductCategories() {
-    return this.request('/products/categories');
+    // Obtener todas las categorías únicas de los productos
+    const products = await this.getProducts();
+    const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+    return categories;
   }
 
   async getProductsByCategory(category) {
-    return this.request(`/products/category/${category}`);
+    const products = await this.getProducts();
+    return products.filter(p => p.category === category);
   }
 
   async createProduct(productData) {
-    return this.request('/products', {
+    const product = await this.requestProducts('', {
       method: 'POST',
       body: productData,
     });
+    return product.imageUrl ? { ...product, image: product.imageUrl || product.image } : product;
   }
 
   async updateProduct(id, updates) {
-    return this.request(`/products/${id}`, {
+    const product = await this.requestProducts(`/${id}`, {
       method: 'PUT',
       body: updates,
     });
+    return product.imageUrl ? { ...product, image: product.imageUrl || product.image } : product;
   }
 
   async deleteProduct(id) {
-    return this.request(`/products/${id}`, {
+    return this.requestProducts(`/${id}`, {
       method: 'DELETE',
     });
   }
 
   async hardDeleteProduct(id) {
-    return this.request(`/products/${id}/hard`, {
+    // Si la API externa no soporta hard delete, usar delete normal
+    return this.requestProducts(`/${id}`, {
       method: 'DELETE',
     });
   }
 
   async toggleProductAvailability(id) {
-    return this.request(`/products/${id}/toggle`, {
-      method: 'PATCH',
+    // Obtener el producto actual y cambiar su disponibilidad
+    const product = await this.getProductById(id);
+    // Manejar available como número (0/1) o booleano
+    const currentAvailable = product.available === 1 || product.available === true;
+    const updated = await this.updateProduct(id, { 
+      ...product, 
+      available: currentAvailable ? 0 : 1
     });
+    return updated;
   }
 
   // Métodos de pedidos

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import WeatherWidget from './WeatherWidget'
 
 const HeroSection = () => {
   const [isVisible, setIsVisible] = useState(false)
@@ -81,6 +82,15 @@ const HeroSection = () => {
                 </svg>
               </span>
             </Link>
+          </div>
+
+          {/* Weather Widget */}
+          <div className={`transform transition-all duration-1000 delay-900 ${
+            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+          }`}>
+            <div className="mt-8 max-w-2xl mx-auto px-4">
+              <WeatherWidget />
+            </div>
           </div>
 
           {/* Scroll Indicator */}

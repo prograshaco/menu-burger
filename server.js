@@ -247,14 +247,31 @@ app.patch('/api/users/:id/toggle', async (req, res) => {
   }
 });
 
-// Rutas de productos
+// Proxy para la API externa de productos
+const EXTERNAL_PRODUCTS_API = 'https://api-burger.onrender.com/api/products';
+
+// Rutas de productos - proxy a API externa
 app.get('/api/products/all', async (req, res) => {
   try {
-    const products = await database.getAllProducts();
-    res.json(products);
+    console.log('🔄 Proxy: Obteniendo todos los productos de API externa...');
+    const response = await fetch(EXTERNAL_PRODUCTS_API);
+    
+    if (!response.ok) {
+      throw new Error(`API externa respondió con status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // La API externa devuelve { value: [...], Count: N }
+    if (data.value && Array.isArray(data.value)) {
+      console.log(`✅ Proxy: ${data.value.length} productos obtenidos`);
+      res.json(data.value);
+    } else {
+      res.json(data);
+    }
   } catch (error) {
-    console.error('Error obteniendo productos:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error en proxy de productos:', error);
+    res.status(500).json({ error: 'Error obteniendo productos de la API externa' });
   }
 });
 
@@ -280,79 +297,119 @@ app.get('/api/products/category/:category', async (req, res) => {
 
 app.get('/api/products', async (req, res) => {
   try {
-    const products = await database.getProducts();
-    res.json(products);
+    console.log('🔄 Proxy: Obteniendo productos de API externa...');
+    const response = await fetch(EXTERNAL_PRODUCTS_API);
+    
+    if (!response.ok) {
+      throw new Error(`API externa respondió con status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // La API externa devuelve { value: [...], Count: N }
+    if (data.value && Array.isArray(data.value)) {
+      console.log(`✅ Proxy: ${data.value.length} productos obtenidos`);
+      res.json(data.value);
+    } else {
+      res.json(data);
+    }
   } catch (error) {
-    console.error('Error obteniendo productos:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error en proxy de productos:', error);
+    res.status(500).json({ error: 'Error obteniendo productos de la API externa' });
   }
 });
 
 app.get('/api/products/:id', async (req, res) => {
   try {
-    const product = await database.getProductById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+    console.log(`🔄 Proxy: Obteniendo producto ${req.params.id} de API externa...`);
+    const response = await fetch(`${EXTERNAL_PRODUCTS_API}/${req.params.id}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return res.status(404).json({ error: 'Producto no encontrado' });
+      }
+      throw new Error(`API externa respondió con status: ${response.status}`);
     }
+    
+    const product = await response.json();
+    console.log(`✅ Proxy: Producto ${req.params.id} obtenido`);
     res.json(product);
   } catch (error) {
-    console.error('Error obteniendo producto:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error en proxy de producto:', error);
+    res.status(500).json({ error: 'Error obteniendo producto de la API externa' });
   }
 });
 
 app.post('/api/products', async (req, res) => {
   try {
-    const productData = {
-      name: req.body.name,
-      description: req.body.description,
-      price: parseFloat(req.body.price),
-      category: req.body.category,
-      image_url: req.body.image_url || '',
-      available: req.body.available !== false
-    };
+    console.log('🔄 Proxy: Creando producto en API externa...', req.body);
+    const response = await fetch(EXTERNAL_PRODUCTS_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req.body)
+    });
     
-    const newProduct = await database.createProduct(productData);
+    if (!response.ok) {
+      throw new Error(`API externa respondió con status: ${response.status}`);
+    }
+    
+    const newProduct = await response.json();
+    console.log('✅ Proxy: Producto creado exitosamente');
     res.json(newProduct);
   } catch (error) {
-    console.error('Error creando producto:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error en proxy creando producto:', error);
+    res.status(500).json({ error: 'Error creando producto en la API externa' });
   }
 });
 
 app.put('/api/products/:id', async (req, res) => {
   try {
-    const productId = req.params.id;
-    const updates = {
-      name: req.body.name,
-      description: req.body.description,
-      price: parseFloat(req.body.price),
-      category: req.body.category,
-      image_url: req.body.image_url,
-      available: req.body.available
-    };
+    console.log(`🔄 Proxy: Actualizando producto ${req.params.id} en API externa...`);
+    const response = await fetch(`${EXTERNAL_PRODUCTS_API}/${req.params.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req.body)
+    });
     
-    const updatedProduct = await database.updateProduct(productId, updates);
+    if (!response.ok) {
+      if (response.status === 404) {
+        return res.status(404).json({ error: 'Producto no encontrado' });
+      }
+      throw new Error(`API externa respondió con status: ${response.status}`);
+    }
+    
+    const updatedProduct = await response.json();
+    console.log(`✅ Proxy: Producto ${req.params.id} actualizado`);
     res.json(updatedProduct);
   } catch (error) {
-    console.error('Error actualizando producto:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error en proxy actualizando producto:', error);
+    res.status(500).json({ error: 'Error actualizando producto en la API externa' });
   }
 });
 
 app.delete('/api/products/:id', async (req, res) => {
   try {
-    const productId = req.params.id;
-    const result = await database.deleteProduct(productId);
+    console.log(`🔄 Proxy: Eliminando producto ${req.params.id} en API externa...`);
+    const response = await fetch(`${EXTERNAL_PRODUCTS_API}/${req.params.id}`, {
+      method: 'DELETE'
+    });
     
-    if (!result.success) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+    if (!response.ok) {
+      if (response.status === 404) {
+        return res.status(404).json({ error: 'Producto no encontrado' });
+      }
+      throw new Error(`API externa respondió con status: ${response.status}`);
     }
     
+    console.log(`✅ Proxy: Producto ${req.params.id} eliminado`);
     res.json({ message: 'Producto eliminado exitosamente' });
   } catch (error) {
-    console.error('Error eliminando producto:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error en proxy eliminando producto:', error);
+    res.status(500).json({ error: 'Error eliminando producto en la API externa' });
   }
 });
 
