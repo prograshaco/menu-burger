@@ -137,17 +137,34 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
     try {
       setIsLoading(true);
 
-      // Usuarios
-      const usersData = await apiService.getAllUsers();
-      setUsers(Array.isArray(usersData) ? usersData : []);
+      // Usuarios - manejar error si el backend no está disponible
+      let usersData = [];
+      try {
+        usersData = await apiService.getAllUsers();
+        setUsers(Array.isArray(usersData) ? usersData : []);
+      } catch (err) {
+        console.warn('Backend local no disponible para usuarios:', err);
+        setUsers([]);
+      }
 
-      // Pedidos (desde orderManager)
-      const allOrders = sortByDateDesc(await orderManager.getAllOrders() || []);
-      setOrders(allOrders);
+      // Pedidos (desde orderManager) - manejar error
+      let allOrders = [];
+      try {
+        allOrders = sortByDateDesc(await orderManager.getAllOrders() || []);
+        setOrders(allOrders);
+      } catch (err) {
+        console.warn('Backend local no disponible para pedidos:', err);
+        setOrders([]);
+      }
 
-      // Reseñas (incluir todas para el panel de administración)
-      const reviewsData = await apiService.getAllReviews(true);
-      setReviews(Array.isArray(reviewsData) ? reviewsData : []);
+      // Reseñas - manejar error
+      try {
+        const reviewsData = await apiService.getAllReviews(true);
+        setReviews(Array.isArray(reviewsData) ? reviewsData : []);
+      } catch (err) {
+        console.warn('Backend local no disponible para reseñas:', err);
+        setReviews([]);
+      }
 
       // Estadísticas
       const totalRevenue = allOrders.reduce((sum, o) => sum + Number(o?.total || 0), 0);
@@ -171,7 +188,8 @@ const AdminDashboard = ({ onBackToMenu, onLogout }) => {
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      setNotification({ type: 'error', message: 'No se pudo cargar el panel. Reintenta.' });
+      // No mostrar error si es solo que el backend no está disponible
+      // El dashboard puede funcionar solo con productos
     } finally {
       setIsLoading(false);
     }

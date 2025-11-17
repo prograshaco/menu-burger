@@ -11,7 +11,7 @@ import OrderConfirmation from './OrderConfirmation';
 import AdminDashboard from './AdminDashboard';
 
 const MenuApp = () => {
-  const [activeCategory, setActiveCategory] = useState('burgers');
+  const [activeCategory, setActiveCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -39,9 +39,12 @@ const MenuApp = () => {
         setLoading(true);
         setError(null);
         const productsData = await apiService.getProducts();
+        console.log('✅ Productos cargados:', productsData);
+        console.log('📊 Total de productos:', productsData.length);
+        console.log('📂 Categorías encontradas:', [...new Set(productsData.map(p => p.category))]);
         setProducts(productsData);
       } catch (err) {
-        console.error('Error al cargar productos:', err);
+        console.error('❌ Error al cargar productos:', err);
         setError('Error al cargar los productos');
       } finally {
         setLoading(false);
@@ -52,16 +55,34 @@ const MenuApp = () => {
   }, []);
 
   const filteredProducts = useMemo(() => {
+    console.log('🔍 Filtrando productos:', {
+      totalProducts: products.length,
+      activeCategory,
+      searchTerm
+    });
+    
     // Filtrar productos por categoría activa y disponibilidad
-    let categoryProducts = products.filter(product => 
-      product.category === activeCategory && product.available !== false
-    );
+    let categoryProducts = products.filter(product => {
+      // Verificar disponibilidad (puede ser booleano o número)
+      const isAvailable = product.available === true || product.available === 1;
+      
+      // Si la categoría es 'all', mostrar todos los productos disponibles
+      if (activeCategory === 'all') {
+        return isAvailable;
+      }
+      
+      // Filtrar por categoría específica
+      return product.category === activeCategory && isAvailable;
+    });
+    
+    console.log('📦 Productos después de filtrar por categoría:', categoryProducts.length);
     
     if (searchTerm) {
       categoryProducts = categoryProducts.filter(product => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );
+      console.log('🔎 Productos después de buscar:', categoryProducts.length);
     }
     
     return categoryProducts;

@@ -189,15 +189,19 @@ const ProductManagement = () => {
 
     // 2) Optimistic UI: voltear available SOLO en esa fila
     setProducts(p =>
-      p.map(x => x.id === productId ? { ...x, available: x.available ? 0 : 1 } : x)
+      p.map(x => x.id === productId ? { 
+        ...x, 
+        available: (x.available === 1 || x.available === true) ? 0 : 1 
+      } : x)
     );
 
     setTogglingId(productId);
     try {
       // 3) llamada a la API (sin tocar "loading")
       await apiService.toggleProductAvailability(productId);
-      // listo. si quieres sincronizar silenciosamente, puedes volver a leer sin setLoading:
-      // const fresh = await apiService.getAllProducts(); setProducts(fresh);
+      // Recargar productos para sincronizar con el servidor
+      const fresh = await apiService.getAllProducts();
+      setProducts(fresh);
     } catch (err) {
       console.error('Error al cambiar disponibilidad:', err);
       // 4) rollback si falla
@@ -216,12 +220,16 @@ const ProductManagement = () => {
       setError(null);
       
       // Optimistic UI: habilitar todos los productos no disponibles
-      setProducts(prev => prev.map(product => 
-        !product.available ? { ...product, available: 1 } : product
-      ));
+      setProducts(prev => prev.map(product => {
+        const isAvailable = product.available === 1 || product.available === true;
+        return !isAvailable ? { ...product, available: 1 } : product;
+      }));
       
       // Obtener todos los productos no disponibles
-      const notAvailableProducts = previousProducts.filter(product => !product.available);
+      const notAvailableProducts = previousProducts.filter(product => {
+        const isAvailable = product.available === 1 || product.available === true;
+        return !isAvailable;
+      });
       
       // Habilitar cada producto no disponible
       const promises = notAvailableProducts.map(product => 
@@ -229,6 +237,10 @@ const ProductManagement = () => {
       );
       
       await Promise.all(promises);
+      
+      // Recargar productos para sincronizar
+      const fresh = await apiService.getAllProducts();
+      setProducts(fresh);
       
       // Cerrar modal correcto
       setShowActiveAllModal(false);
@@ -254,7 +266,9 @@ const ProductManagement = () => {
       setProducts(prev => prev.map(product => ({ ...product, available: 0 })));
       
       // Obtener todos los productos disponibles
-      const availableProducts = previousProducts.filter(product => product.available);
+      const availableProducts = previousProducts.filter(product => {
+        return product.available === 1 || product.available === true;
+      });
       
       // Deshabilitar cada producto disponible
       const promises = availableProducts.map(product => 
@@ -262,6 +276,10 @@ const ProductManagement = () => {
       );
       
       await Promise.all(promises);
+      
+      // Recargar productos para sincronizar
+      const fresh = await apiService.getAllProducts();
+      setProducts(fresh);
       
       // Cerrar modal
       setShowDisableAllModal(false);
@@ -328,14 +346,14 @@ const ProductManagement = () => {
         <div className="flex space-x-3">
           <button
             onClick={() => setShowActiveAllModal(true)}
-            disabled={activatingAll || products.filter(p => !p.available).length === 0}
+            disabled={activatingAll || products.filter(p => !(p.available === 1 || p.available === true)).length === 0}
             className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
           >
             {activatingAll ? 'Habilitando...' : 'Habilitar Todos'}
           </button>
           <button
             onClick={() => setShowDisableAllModal(true)}
-            disabled={disablingAll || products.filter(p => p.available).length === 0}
+            disabled={disablingAll || products.filter(p => p.available === 1 || p.available === true).length === 0}
             className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
           >
             {disablingAll ? 'Deshabilitando...' : 'Deshabilitar Todos'}
@@ -393,7 +411,7 @@ const ProductManagement = () => {
             <h3 className="text-xl font-bold mb-4 text-white">Confirmar Acción</h3>
             <p className="text-gray-300 mb-6">
               ¿Estás seguro de que quieres deshabilitar todos los productos disponibles? 
-              Esta acción afectará a {products.filter(p => p.available).length} productos.
+              Esta acción afectará a {products.filter(p => p.available === 1 || p.available === true).length} productos.
             </p>
             <div className="flex space-x-3">
               <button
@@ -422,7 +440,7 @@ const ProductManagement = () => {
             <h3 className="text-xl font-bold mb-4 text-white">Confirmar Acción</h3>
             <p className="text-gray-300 mb-6">
               ¿Estás seguro de que quieres habilitar todos los productos no disponibles? 
-              Esta acción afectará a {products.filter(p => !p.available).length} productos.
+              Esta acción afectará a {products.filter(p => !(p.available === 1 || p.available === true)).length} productos.
             </p>
             <div className="flex space-x-3">
               <button
