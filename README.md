@@ -89,12 +89,12 @@ root/
 graph TD
     A[Cliente accede al menú] --> B[Selecciona productos]
     B --> C[Agrega al carrito]
-    C --> D{¿Usuario registrado?}
+    C --> D{"¿Usuario registrado?"}
     D -->|Sí| E[Checkout con datos guardados]
     D -->|No| F[Checkout con formulario completo]
     E --> G[Confirma pedido]
     F --> G
-    G --> H[Backend procesa pedido (Turso/SQLite)]
+    G --> H["Backend procesa pedido (Turso/SQLite)"]
     H --> I[Genera ID y notifica]
     I --> J[Pedido aparece en panel admin]
     J --> K[Admin procesa pedido]
@@ -107,8 +107,8 @@ graph TD
 
 ```mermaid
 graph TD
-    A[Admin accede a gestión] --> B[Lista productos (Proxy API + Local)]
-    B --> C{¿Qué acción?}
+    A[Admin accede a gestión] --> B["Lista productos (Proxy API + Local)"]
+    B --> C{"¿Qué acción?"}
     C -->|Crear| D[Formulario nuevo producto]
     C -->|Editar| E[Selecciona producto existente]
     C -->|Subir Imagen| F[Carga imagen a /uploads]
@@ -124,9 +124,9 @@ graph TD
 
 ```mermaid
 graph TD
-    A[Usuario accede a la app] --> B{¿Tiene cuenta?}
-    B -->|Sí| C[Inicia sesión (JWT)]
-    B -->|No| D{¿Quiere registrarse?}
+    A[Usuario accede a la app] --> B{"¿Tiene cuenta?"}
+    B -->|Sí| C["Inicia sesión (JWT)"]
+    B -->|No| D{"¿Quiere registrarse?"}
     D -->|Sí| E[Completa registro]
     D -->|No| F[Continúa como invitado]
     C --> G[Acceso completo + Historial]
@@ -313,8 +313,18 @@ JWT_SECRET=tu_clave_secreta
 
 #### **Reseñas**
 
-- `GET /api/reviews`: Obtener reseñas.
+- `GET /api/reviews`: Obtener reseñas (opcional `?includeUnapproved=true`).
 - `POST /api/reviews`: Crear reseña.
+- `PUT /api/reviews/:id/approval`: Aprobar/Rechazar reseña (Admin).
+- `DELETE /api/reviews/:id`: Eliminar reseña (Admin).
+
+#### **Administración y Otros**
+
+- `GET /api/stats`: Estadísticas del dashboard (Ventas, pedidos, etc.).
+- `GET /api/activity-logs`: Logs de auditoría del sistema.
+- `POST /api/activity-logs`: Registrar una acción.
+- `GET /api/specialties`: Obtener productos destacados.
+- `POST /api/products/activate-all`: Activar todos los productos (Herramienta).
 
 ## 🎨 Interfaz de Usuario
 
@@ -358,4 +368,4 @@ Para soporte técnico o consultas sobre el sistema, contactar al equipo de desar
 
 ---
 
-_Documentación actualizada - Versión 3.0 (Full Stack Hybrid)_
+_Documentación actualizada - Versión 3.0 (Por Jassack Mendoza)_
