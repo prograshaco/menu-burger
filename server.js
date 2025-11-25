@@ -370,12 +370,22 @@ app.get('/api/products/:id', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   try {
     console.log('🔄 Proxy: Creando producto en API externa...', req.body);
+    const externalBody = {
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      category: req.body.category,
+      imageUrl: req.body.imageUrl,
+      available: req.body.available,
+      isSpecialty: req.body.isSpecialty
+    };
+
     const response = await fetch(EXTERNAL_PRODUCTS_API, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(externalBody)
     });
     
     if (!response.ok) {
@@ -394,12 +404,22 @@ app.post('/api/products', async (req, res) => {
 app.put('/api/products/:id', async (req, res) => {
   try {
     console.log(`🔄 Proxy: Actualizando producto ${req.params.id} en API externa...`);
+    const externalBody = {
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      category: req.body.category,
+      imageUrl: req.body.imageUrl,
+      available: req.body.available,
+      isSpecialty: req.body.isSpecialty
+    };
+
     const response = await fetch(`${EXTERNAL_PRODUCTS_API}/${req.params.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(externalBody)
     });
     
     if (!response.ok) {
