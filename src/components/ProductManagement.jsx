@@ -133,9 +133,13 @@ const ProductManagement = () => {
       }
       
       const productData = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
         price: parseFloat(formData.price),
-        image: imageUrl
+        category: formData.category,
+        imageUrl: imageUrl,                 // <-- CORRECTO
+        available: formData.available ? 1 : 0, // <-- CORRECTO
+        isSpecialty: formData.isSpecialty ? 1 : 0   // si existe el campo, si no, elimínalo
       };
 
       if (editingProduct) {
